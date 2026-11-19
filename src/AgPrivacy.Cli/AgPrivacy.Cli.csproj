@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><IsAotCompatible>true</IsAotCompatible><OptimizationPreference>Size</OptimizationPreference></PropertyGroup><ItemGroup><ProjectReference Include="../AgPrivacy.Core/AgPrivacy.Core.csproj"/></ItemGroup></Project>

@@ -1,0 +1,2 @@
+fullName;email;status;trace.id
+Fixture Person;sample.person@example.test;approved;demo-trace-0001

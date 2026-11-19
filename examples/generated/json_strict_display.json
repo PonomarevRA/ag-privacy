@@ -1,0 +1,17 @@
+{
+  "status": "approved",
+  "category": "demo",
+  "numberId": 42,
+  "tags": [
+    "demo",
+    "sample"
+  ],
+  "email": "[REDACTED:v1:EMAIL:ae8da56e2d8cede1fe6c1f5a845c4e2402742fef0092705536dbc5fc62c7bf3a]",
+  "customContact": "[REDACTED:v1:EMAIL:49fdf4b48b4f33ef4b1f6bf106b401838a5079771fd1cdd397a20833ed204dd9]",
+  "customPhone": "[REDACTED:v1:PHONE:fc974265e1eefb0535c9b6dfae721163f7cc0bb75738d9772be968b46f9e0956]",
+  "customAgreement": "[REDACTED:v1:AGREEMENT:dcec09ac83360acdc518add364a60127567f5978d8738e0038ab333ec224684a]",
+  "[REDACTED:v1:KEY_EMAIL:d1cbc2338d41a1ad7e077e2da1b197b4a3faa6483322613103d4c6c75b3a0ab4]": "ordinary value",
+  "[REDACTED:v1:KEY_PHONE:d458e1c36f48df9b505edda9e778dba55cd377a752c92208618d5c5a30ddd896]": "ordinary value",
+  "isin": "US0378331005",
+  "ticker": "DEMO"
+}

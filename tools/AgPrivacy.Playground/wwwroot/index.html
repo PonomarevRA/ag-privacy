@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Проверка маскирования · ag-privacy</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/playground.js"></script>
+</head>
+<body>
+  <main>
+    <header class="intro">
+      <p class="product">ag-privacy <span>Локальный инструмент</span></p>
+      <h1>Проверка маскирования</h1>
+      <p>Сравните исходные данные и результат маскирования.</p>
+    </header>
+
+    <form id="mask-form" method="post" autocomplete="off">
+      <div class="settings">
+        <div id="mode-setting" class="format">
+          <label for="mode">Режим</label>
+          <select id="mode" autocomplete="off" aria-describedby="mode-help">
+            <option value="strict" selected>Строгий</option>
+            <option value="soft-part">soft-part</option>
+            <option value="log-types">Типы данных в логах</option>
+          </select>
+          <p id="mode-help" class="hint" aria-live="polite">Заменяет чувствительные значения целиком.</p>
+        </div>
+        <div class="format">
+          <label for="format">Формат</label>
+          <select id="format" aria-describedby="format-help">
+            <option value="json">JSON</option>
+            <option value="text">Текст</option>
+            <option value="csv">CSV</option>
+            <option value="xml">XML</option>
+          </select>
+          <p id="format-help" class="hint">Обычные значения сохраняются. Чувствительные поля и распознанные значения маскируются.</p>
+        </div>
+        <div id="delimiter-setting" class="format" hidden>
+          <label for="delimiter">Разделитель CSV</label>
+          <select id="delimiter" aria-describedby="delimiter-help">
+            <option value="comma">Запятая (,)</option>
+            <option value="semicolon">Точка с запятой (;)</option>
+            <option value="tab">Табуляция</option>
+          </select>
+          <p id="delimiter-help" class="hint">Первая строка должна содержать заголовки.</p>
+        </div>
+      </div>
+
+      <details id="field-exceptions">
+        <summary>Исключения полей JSON</summary>
+        <div class="editor">
+          <label for="exception-list">Имена полей</label>
+          <textarea id="exception-list" rows="3" spellcheck="false" disabled
+                    aria-describedby="exception-help exception-status"></textarea>
+          <p id="exception-help" class="hint">По одному имени на строку. Регистр не важен. Для этих полей пропускается эвристика имён людей. Явные правила маскирования действуют.</p>
+          <div class="actions">
+            <button id="save-exceptions" type="button" disabled>Применить список</button>
+            <button id="reset-exceptions" type="button" disabled>Вернуть список из конфига</button>
+          </div>
+          <p id="exception-status" class="hint" role="status"></p>
+        </div>
+      </details>
+
+      <div class="editors">
+        <div class="editor">
+          <div id="file-setting" class="format" hidden>
+            <label for="source-file">Файл</label>
+            <input id="source-file" type="file" aria-describedby="input-help">
+          </div>
+          <label for="input">Исходные данные</label>
+          <textarea id="input" required spellcheck="false" autocapitalize="off"
+                    autocomplete="off" aria-describedby="input-help"></textarea>
+          <p id="input-help" class="hint">До 256 КиБ текста в UTF-8. Для файлов CSV и TSV также поддерживается Windows-1251.</p>
+        </div>
+        <div id="single-output" class="editor">
+          <label for="result">Результат маскирования</label>
+          <textarea id="result" readonly spellcheck="false" aria-describedby="result-info status"
+                    placeholder="Здесь появится результат"></textarea>
+          <p id="result-info" class="hint" role="status"></p>
+          <button id="download-result" type="button" hidden>Скачать результат</button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="mask" type="submit">Замаскировать</button>
+        <button id="compare" type="button" aria-describedby="compare-help">Сравнить режимы</button>
+        <button id="example" type="button">Загрузить пример</button>
+        <button id="clear" type="button">Очистить</button>
+      </div>
+      <p id="compare-help" class="hint">Для одного JSON покажет три режима. Подсветка отмечает места замены.</p>
+      <p id="status" role="status"></p>
+
+      <div id="comparison" class="editors" hidden>
+        <div class="editor">
+          <h2 id="strict-title" class="comparison-title">Строгий</h2>
+          <pre id="strict-result" class="comparison-result" tabindex="0" role="region"
+               aria-labelledby="strict-title" aria-describedby="strict-info"></pre>
+          <p id="strict-info" class="hint"></p>
+        </div>
+        <div class="editor">
+          <h2 id="soft-title" class="comparison-title">soft-part</h2>
+          <pre id="soft-result" class="comparison-result" tabindex="0" role="region"
+               aria-labelledby="soft-title" aria-describedby="soft-info"></pre>
+          <p id="soft-info" class="hint"></p>
+        </div>
+        <div class="editor">
+          <h2 id="log-types-title" class="comparison-title">Типы данных в логах</h2>
+          <pre id="log-types-result" class="comparison-result" tabindex="0" role="region"
+               aria-labelledby="log-types-title" aria-describedby="log-types-info"></pre>
+          <p id="log-types-info" class="hint"></p>
+        </div>
+      </div>
+
+      <details id="rules">
+        <summary>Справочник правил маскирования</summary>
+        <p class="hint">Код в маркере показывает правило, выбранное по имени поля или формату данных.</p>
+        <p id="rules-status" class="hint" role="status"></p>
+        <dl id="rule-list"></dl>
+      </details>
+      <noscript>Для запуска проверки включите JavaScript.</noscript>
+    </form>
+  </main>
+</body>
+</html>

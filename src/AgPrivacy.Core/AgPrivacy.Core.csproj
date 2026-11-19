@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AllowUnsafeBlocks>true</AllowUnsafeBlocks><IsAotCompatible>true</IsAotCompatible><GeneratePackageOnBuild>false</GeneratePackageOnBuild><PackageId>AgPrivacy.Core</PackageId><Version>0.2.0</Version><Description>Offline deterministic privacy policy and micro NER.</Description><PackageReadmeFile>README.md</PackageReadmeFile></PropertyGroup><ItemGroup><None Include="../../docs/nuget/README.md" Pack="true" PackagePath="/"/><None Include="../../docs/contract.md" Pack="true" PackagePath="docs/"/></ItemGroup><ItemGroup>
+    <EmbeddedResource Include="Data/ru-names.txt" LogicalName="AgPrivacy.ru-names.txt" />
+    <EmbeddedResource Include="Data/surname-shape.bin" LogicalName="AgPrivacy.surname-shape.bin" />
+    <None Include="../../notices/THIRD-PARTY-NOTICES.TXT" Pack="true" PackagePath="notices/" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="AgPrivacy.ContextEvaluation" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "ag-privacy-runtime-v1",
+  "mode": "strict",
+  "scope": "product-scope",
+  "maxInputBytes": 262144,
+  "maxOutputBytes": 4194304,
+  "compiledRulesSha256": "3d1dfc7458cdf920e81879e15fabeab7dcb1bfe52aae061583b6e2da16077434",
+  "policyFile": "policy.json",
+  "policySha256": "55322ea1ec0c85a1715aa59bd97e43a68d54dbb47ac85f0d6db1eaeca8155e02"
+}

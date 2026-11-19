@@ -1,0 +1,2 @@
+# Preserve the upstream notice text byte-for-byte, including its final blank line.
+notices/THIRD-PARTY-NOTICES.TXT whitespace=-blank-at-eof

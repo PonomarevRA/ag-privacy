@@ -1,0 +1,13 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json.Nodes;
+using AgPrivacy;
+if(args.Length!=2||!Enum.TryParse<PrivacyProtectionMode>(args[1],out var mode))return 2;
+string root=Path.GetFullPath(args[0]);if(Directory.Exists(root))return 2;Directory.CreateDirectory(root);
+using var signer=ECDsa.Create(ECCurve.NamedCurves.nistP256);
+byte[] policy="{\"schemaVersion\":\"ag-privacy-policy-v1\"}"u8.ToArray();File.WriteAllBytes(Path.Combine(root,"policy.json"),policy);
+var template=new JsonObject{["schemaVersion"]="ag-privacy-runtime-v1",["mode"]="strict",["scope"]="synthetic-test-only",["maxInputBytes"]=262144,["maxOutputBytes"]=4194304,["compiledRulesSha256"]=GeneratedRules.Version,["policyFile"]="policy.json",["policySha256"]=Convert.ToHexStringLower(SHA256.HashData(policy))};
+var signed=InstallationSettings.SignAfterHumanChoice(Encoding.UTF8.GetBytes(template.ToJsonString()),mode,signer);
+File.WriteAllBytes(Path.Combine(root,"ag-privacy.runtime.json"),signed.Configuration);File.WriteAllBytes(Path.Combine(root,"ag-privacy.runtime.sig"),signed.Signature);
+File.WriteAllBytes(root+".spki",signer.ExportSubjectPublicKeyInfo());File.WriteAllBytes(root+".approved-sha256",SHA256.HashData(signed.Configuration));
+Console.WriteLine("synthetic-fixture-created");return 0;

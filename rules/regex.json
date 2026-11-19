@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "ag-privacy-regex-v1",
+  "rules": [
+    {
+      "id": "guid",
+      "type": "GUID",
+      "pattern": "\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b"
+    },
+    {
+      "id": "guid-compact",
+      "type": "GUID",
+      "pattern": "\\b[0-9a-fA-F]{32}\\b"
+    },
+    {
+      "id": "klogin",
+      "type": "KLOGIN",
+      "pattern": "\\b[A-Za-z][-\\.][0-9]{1,20}\\b"
+    },
+    {
+      "id": "email",
+      "type": "EMAIL",
+      "pattern": "[\\p{L}\\p{N}._%+-]+@[\\p{L}\\p{N}.-]+\\.[\\p{L}]{2,24}"
+    },
+    {
+      "id": "jwt",
+      "type": "SECRET",
+      "pattern": "eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+"
+    },
+    {
+      "id": "api-token",
+      "type": "SECRET",
+      "pattern": "\\b(?:ghp_|github_pat_|sk-)[A-Za-z0-9_-]{16,}"
+    },
+    {
+      "id": "private-key",
+      "type": "SECRET",
+      "pattern": "-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----[\\s\\S]*?-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"
+    },
+    {
+      "id": "inn-labeled",
+      "type": "INN",
+      "pattern": "\\b(?:ИНН|inn)\\s*[:=]?\\s*[0-9]{10,12}\\b",
+      "ignoreCase": true
+    },
+    {
+      "id": "kpp-labeled",
+      "type": "KPP",
+      "pattern": "\\b(?:КПП|kpp)\\s*[:=]?\\s*[0-9]{9}\\b",
+      "ignoreCase": true
+    },
+    {
+      "id": "trdacc-labeled",
+      "type": "TRDACC",
+      "pattern": "\\btrdacc\\s*[:=]\\s*[A-Za-z0-9_.-]{1,64}",
+      "ignoreCase": true
+    }
+  ]
+}

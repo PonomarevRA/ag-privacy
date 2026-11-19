@@ -1,0 +1,1 @@
+{"schemaVersion":"ag-privacy-policy-v1","fields":{"agentFullName":"PERSON","internalAccountNumber":"IDENTIFIER","integrationCredential":"SECRET"},"publicValues":{"packageId":["12345678-1234-5678-9abc-123456789abc"],"status":["ok","pending"]}}

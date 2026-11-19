@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><IsAotCompatible>true</IsAotCompatible><PublishAot>true</PublishAot><NativeLib>Shared</NativeLib><AllowUnsafeBlocks>true</AllowUnsafeBlocks><OptimizationPreference>Size</OptimizationPreference></PropertyGroup><ItemGroup><ProjectReference Include="../AgPrivacy.Core/AgPrivacy.Core.csproj"/></ItemGroup></Project>

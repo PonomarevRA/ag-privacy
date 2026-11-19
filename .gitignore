@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+artifacts/
+packages/
+demo-output/
+TestResults/
+*.key
+*.secret
+.DS_Store
+__pycache__/
+*.pyc

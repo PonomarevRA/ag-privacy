@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "ag-privacy-build-targets-v1",
+  "targets": [
+    {
+      "rid": "osx-x64",
+      "platform": "darwin",
+      "architecture": "x64",
+      "nativeFile": "AgPrivacy.Native.dylib"
+    },
+    {
+      "rid": "osx-arm64",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "nativeFile": "AgPrivacy.Native.dylib"
+    },
+    {
+      "rid": "linux-x64",
+      "platform": "linux",
+      "architecture": "x64",
+      "nativeFile": "AgPrivacy.Native.so"
+    },
+    {
+      "rid": "linux-arm64",
+      "platform": "linux",
+      "architecture": "arm64",
+      "nativeFile": "AgPrivacy.Native.so"
+    },
+    {
+      "rid": "win-x64",
+      "platform": "win32",
+      "architecture": "x64",
+      "nativeFile": "AgPrivacy.Native.dll"
+    },
+    {
+      "rid": "win-arm64",
+      "platform": "win32",
+      "architecture": "arm64",
+      "nativeFile": "AgPrivacy.Native.dll"
+    }
+  ]
+}

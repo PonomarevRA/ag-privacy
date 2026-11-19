@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AG Privacy signed runtime profile",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "ag-privacy-runtime-v1"
+    },
+    "mode": {
+      "enum": [
+        "strict",
+        "credentials-only",
+        "off"
+      ]
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "compiledRulesSha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "policyFile": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[A-Za-z0-9_-][A-Za-z0-9_.-]*$"
+    },
+    "policySha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "modelFile": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[A-Za-z0-9_-][A-Za-z0-9_.-]*$"
+    },
+    "modelSha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "humanSetupChoice": {
+      "type": "string"
+    },
+    "maxInputBytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 262144
+    },
+    "maxOutputBytes": {
+      "type": "integer",
+      "minimum": 128,
+      "maximum": 4194304
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "mode",
+    "scope",
+    "maxInputBytes",
+    "maxOutputBytes",
+    "compiledRulesSha256",
+    "policyFile",
+    "policySha256"
+  ],
+  "dependentRequired": {
+    "modelFile": [
+      "modelSha256"
+    ],
+    "modelSha256": [
+      "modelFile"
+    ]
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "credentials-only"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "humanSetupChoice"
+        ],
+        "properties": {
+          "humanSetupChoice": {
+            "const": "credentials-only"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "off"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "humanSetupChoice"
+        ],
+        "properties": {
+          "humanSetupChoice": {
+            "const": "off"
+          }
+        }
+      }
+    }
+  ]
+}
