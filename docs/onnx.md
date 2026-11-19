@@ -1,5 +1,7 @@
 # Запуск моделей ФИО через ONNX
 
+[Русский](onnx.md) · [English](onnx.en.md)
+
 `AgPrivacy.Onnx` подключает ONNX Runtime CPU к интерфейсу `IPersonDetector`. Подготовлены `models/person-default.onnx` и `models/person-prose.onnx`. Их можно передать в `PrivacyEngine` и `StreamingPrivacyMasker`.
 
 ## Запуск примера

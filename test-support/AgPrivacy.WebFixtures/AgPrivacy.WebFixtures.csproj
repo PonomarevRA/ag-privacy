@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><IsPackable>false</IsPackable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/AgPrivacy.Core/AgPrivacy.Core.csproj" />
+    <None Include="../../models/person-default.bin" Link="person-default.bin" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../models/person-prose.bin" Link="person-prose.bin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

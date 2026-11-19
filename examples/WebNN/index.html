@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>ag-privacy · WebNN</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./demo.mjs"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>ag-privacy · WebNN</h1>
+      <nav aria-label="Документация">
+        <a href="../../docs/webnn.md">Русский</a>
+        <a href="../../docs/webnn.en.md" lang="en">English</a>
+      </nav>
+    </header>
+    <p>Локальный детектор ФИО. Текст обрабатывается в браузере. Для полного набора правил используйте основной конвейер ag-privacy.</p>
+    <div class="options">
+      <label>Модель
+        <select id="model">
+          <option value="person-prose">ФИО и логины в сообщении</option>
+          <option value="person-default">Основная модель ФИО</option>
+        </select>
+      </label>
+      <label>Вычисления
+        <select id="backend">
+          <option value="auto">Автоматически</option>
+          <option value="webnn">Только WebNN</option>
+          <option value="javascript">JavaScript</option>
+        </select>
+      </label>
+      <label>Предпочитаемое устройство
+        <select id="device">
+          <option value="cpu">CPU</option>
+          <option value="gpu">GPU</option>
+          <option value="npu">NPU</option>
+        </select>
+      </label>
+    </div>
+    <label for="source">Сообщение</label>
+    <textarea id="source" rows="6" spellcheck="false">Контакт: Алина Зорничева; employee login=levchanov_io; запрос обработан.</textarea>
+    <button id="run" type="button">Проверить модель</button>
+    <p id="status" role="status" aria-live="polite">Выберите режим и запустите проверку.</p>
+    <section aria-label="Результат">
+      <h2>Результат</h2>
+      <pre id="result">—</pre>
+      <p id="counts"></p>
+    </section>
+  </main>
+</body>
+</html>
