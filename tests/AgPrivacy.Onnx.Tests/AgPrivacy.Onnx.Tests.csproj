@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/AgPrivacy.Onnx/AgPrivacy.Onnx.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <None Include="../../models/person-*.bin" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../models/person-*.onnx" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures/*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

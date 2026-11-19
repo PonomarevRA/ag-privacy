@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>AgPrivacy.Onnx</PackageId>
+    <Version>0.2.0</Version>
+    <Description>ONNX Runtime adapter for ag-privacy person detection.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../AgPrivacy.Core/AgPrivacy.Core.csproj" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.27.0" />
+    <None Include="../../docs/onnx.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+</Project>

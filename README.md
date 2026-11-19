@@ -127,3 +127,7 @@ node --test tests/javascript/privacy-host.test.mjs
 UI экспортирует Prometheus-метрики по [http://127.0.0.1:47832/metrics](http://127.0.0.1:47832/metrics). Для собственного хоста библиотека предоставляет `System.Diagnostics.Metrics.Meter` с именем `AgPrivacy`. Значения исходных данных в метки метрик не попадают.
 
 Код распространяется по [MIT](LICENSE). Условия сторонних компонентов, словаря имён и источников обучения приведены в [уведомлениях](notices/THIRD-PARTY-NOTICES.TXT).
+
+## ONNX Runtime
+
+Модели ФИО и логинов доступны в ONNX. В [docs/onnx.md](docs/onnx.md) находятся экспорт собственных весов, подключение в .NET и команда запуска готового потокового примера.

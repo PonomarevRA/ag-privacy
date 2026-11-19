@@ -1,0 +1,2 @@
+{"trace.id":"demo-trace-01","message":"Контакт: Алина Зорничева; email=sample.person@example.test","status":"ok"}
+{"trace.id":"demo-trace-01","message":"service account login=levchanov_io; client: Alina Zornicheva","status":"ready"}
