@@ -7,6 +7,17 @@ public readonly record struct EntitySpan(int Start, int Length, string Type, int
     internal bool JsonNumber { get; init; }
 }
 
+/// <summary>
+/// Opt-in offline routing for two existing detectors. Text reads narrative outside complete JSON,
+/// Structured reads decoded message values and known query parameters, and Mixed runs both.
+/// </summary>
+public enum LogAnalysisMode
+{
+    Text,
+    Structured,
+    Mixed
+}
+
 /// <summary>Необязательный локальный распознаватель. Его прогноз не является разрешением выдавать текст.</summary>
 public interface IPersonDetector
 {

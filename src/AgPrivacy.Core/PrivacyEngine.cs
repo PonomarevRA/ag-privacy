@@ -71,6 +71,40 @@ public sealed class PrivacyEngine(PrivacyPolicy policy, Pseudonymizer aliases, I
         finally { PrivacyMetrics.Record(started, "log_types", result); }
     }
 
+    /// <summary>
+    /// Use independently configured prose and structured detectors for an offline display preview.
+    /// </summary>
+    public PrivacyResult SanitizeTypedLogForDisplay(string input, LogAnalysisMode analysisMode, IPersonDetector? proseDetector, IPersonDetector? structuredDetector) =>
+        SanitizeTypedLogForDisplay(input, includePreview: false, analysisMode, proseDetector, structuredDetector);
+
+    /// <summary>Same explicit routing, with replacement offsets when a preview is requested.</summary>
+    public PrivacyResult SanitizeTypedLogForDisplay(string input, bool includePreview, LogAnalysisMode analysisMode, IPersonDetector? proseDetector, IPersonDetector? structuredDetector)
+    {
+        long started = PrivacyMetrics.Start();
+        PrivacyResult? result = null;
+        try
+        {
+            ValidateSize(input);
+            var replacementsByType = new Dictionary<string, int>(StringComparer.Ordinal);
+            List<MaskHighlight>? highlights = includePreview ? [] : null;
+            var redactor = new TextRedactor(aliases, policy, null, proseDetector, structuredDetector, analysisMode);
+            var masked = redactor.RedactTypedLog(input, replacementsByType, highlights);
+            string? proseVersion = analysisMode == LogAnalysisMode.Structured ? null : proseDetector?.Version;
+            string? structuredVersion = analysisMode == LogAnalysisMode.Text ? null : structuredDetector?.Version;
+            string modelVersion = proseVersion ?? structuredVersion ?? "none";
+            if (proseVersion is not null && structuredVersion is not null)
+                modelVersion = proseVersion + "+" + structuredVersion;
+            return result = new(true, false, "typed-log-redaction-for-display", masked.Text, null, masked.Count,
+                policy.Version, modelVersion, [], null)
+            {
+                ReplacementsByType = replacementsByType,
+                Preview = highlights is null ? null : new(masked.Text, highlights)
+            };
+        }
+        catch (Exception e) when (Recoverable(e)) { return result = Blocked(); }
+        finally { PrivacyMetrics.Record(started, "log_types", result); }
+    }
+
     /// <summary>Очищает и ключи, и листья JSON до индексирования/пагинации; ошибки не содержат rejected input.</summary>
     public PrivacyResult SanitizeJson(string json, PrivacyContext? context = null) =>
         MeasureJson(json, context, preserveFieldNames: false);

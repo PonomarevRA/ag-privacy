@@ -5,15 +5,16 @@ using System.Text.RegularExpressions;
 
 namespace AgPrivacy;
 
-/// <summary>Find message strings in JSON carried inside one or more JSON strings.</summary>
+/// <summary>Find named person fields and message strings in structured or escaped JSON.</summary>
 internal static partial class NestedJsonMessagePersonNames
 {
     private const int MaxWrappers = 8;
+    internal const int NamedPersonPriority = 210;
 
     /// <summary>Read structured payloads in a log and project nested sensitive spans onto the original text.</summary>
-    internal static bool Add(string text, List<EntitySpan> spans, DisplayFieldExceptions exceptions)
+    internal static bool Add(string text, List<EntitySpan> spans, PrivacyPolicy policy)
     {
-        if (!text.Contains("\\\"", StringComparison.Ordinal) && !text.Contains("\\u0022", StringComparison.Ordinal))
+        if (!text.Contains("\\\"", StringComparison.Ordinal) && !text.Contains("\\u", StringComparison.Ordinal))
             return false;
 
         bool foundStructure = false;
@@ -23,15 +24,36 @@ internal static partial class NestedJsonMessagePersonNames
         {
             if (candidate.Index < consumed) continue;
             var frame = new Frame(text, candidate.Index, null);
-            foundStructure |= Walk(frame, 0, spans, exceptions, watch, out int length);
+            foundStructure |= Walk(frame, 0, spans, policy, watch, out int length);
             consumed = candidate.Index + length;
         }
         return foundStructure;
     }
 
+    /// <summary>Same walk as <see cref="Add"/>, plus source ranges and decoded leaves for explicit analysis routing.</summary>
+    internal static void Map(string text, List<EntitySpan> spans, PrivacyPolicy policy, Sink sink)
+    {
+        if (text.IndexOf('{') < 0 && text.IndexOf('[') < 0
+            && !text.Contains("\\\"", StringComparison.Ordinal)
+            && !text.Contains("\\u0022", StringComparison.Ordinal))
+            return;
+
+        int consumed = 0;
+        var watch = Stopwatch.StartNew();
+        foreach (Match candidate in JsonStarts().Matches(text))
+        {
+            if (candidate.Index < consumed) continue;
+            var frame = new Frame(text, candidate.Index, null);
+            bool isContainer = Walk(frame, 0, spans, policy, watch, out int length, sink);
+            if (!isContainer) continue;
+            sink.Ranges.Add((candidate.Index, length));
+            consumed = candidate.Index + length;
+        }
+    }
+
     /// <summary>Validate one complete JSON value before reading its strings. A log suffix may follow the value.</summary>
-    private static bool Walk(Frame frame, int wrappers, List<EntitySpan> spans, DisplayFieldExceptions exceptions,
-        Stopwatch watch, out int consumed)
+    private static bool Walk(Frame frame, int wrappers, List<EntitySpan> spans, PrivacyPolicy policy,
+        Stopwatch watch, out int consumed, Sink? sink = null, bool requireWhole = false)
     {
         consumed = 0;
         if (watch.ElapsedMilliseconds > 250 || spans.Count >= PrivacyLimits.Entities)
@@ -48,43 +70,66 @@ internal static partial class NestedJsonMessagePersonNames
             bytes = end.BytesConsumed;
         }
         catch (JsonException) { return false; }
-        consumed = Encoding.UTF8.GetCharCount(utf8.AsSpan(0, (int)bytes));
-
+        int length = Encoding.UTF8.GetCharCount(utf8.AsSpan(0, (int)bytes));
+        if (requireWhole && !frame.Text.AsSpan(frame.Start + length).Trim().IsEmpty) return false;
+        consumed = length;
         string? property = null;
         int lastByte = 0;
         int charOffset = 0;
-        bool foundStructure = wrappers > 0 && reader.TokenType is (JsonTokenType.StartObject or JsonTokenType.StartArray);
+        bool foundStructure = (sink is not null || wrappers > 0)
+            && reader.TokenType is (JsonTokenType.StartObject or JsonTokenType.StartArray);
         while (true)
         {
             if (reader.TokenType == JsonTokenType.PropertyName)
                 property = reader.GetString();
             else
             {
-                if (reader.TokenType == JsonTokenType.String && ReadString(reader, property, wrappers,
-                    out string decoded, out bool message, out bool container))
+                if (reader.TokenType == JsonTokenType.String)
                 {
-                    int tokenByte = (int)reader.TokenStartIndex;
-                    charOffset += Encoding.UTF8.GetCharCount(utf8.AsSpan(lastByte, tokenByte - lastByte));
-                    lastByte = tokenByte;
-                    int rawStart = frame.Start + charOffset + 1;
-                    int rawLength = Encoding.UTF8.GetCharCount(reader.ValueSpan);
-                    Frame child = frame.Decode(rawStart, rawLength, decoded);
-                    if (container)
+                    bool read = ReadString(reader, property, wrappers, out string decoded, out bool message, out bool container, sink is not null);
+                    bool namedPerson = IsNamedPersonField(property, policy);
+                    bool wantQuery = !namedPerson && sink is not null && QueryHint(reader.ValueSpan);
+                    if ((namedPerson && !reader.ValueSpan.IsEmpty) || read || wantQuery)
                     {
-                        bool childFound = Walk(child, wrappers + 1, spans, exceptions, watch, out int childLength);
-                        foundStructure |= childFound;
-                        // A quoted name can look like a string wrapper. Treat it as message text
-                        // unless the decoded value led to a structured payload.
-                        if (childFound || (childLength > 0 && decoded.AsSpan().TrimStart()[0] is ('{' or '[')))
+                        if (!read) decoded = reader.GetString() ?? "";
+                        int tokenByte = (int)reader.TokenStartIndex;
+                        charOffset += Encoding.UTF8.GetCharCount(utf8.AsSpan(lastByte, tokenByte - lastByte));
+                        lastByte = tokenByte;
+                        int rawStart = frame.Start + charOffset + 1;
+                        int rawLength = Encoding.UTF8.GetCharCount(reader.ValueSpan);
+                        Frame child = frame.Decode(rawStart, rawLength, decoded);
+                        bool childFound = false;
+                        if (namedPerson)
                         {
-                            if (message) AddMessageSpans(child, wrappers + 1, spans, exceptions, loginOnly: true);
-                            message = false;
+                            AddNamedPerson(child, spans);
+                            foundStructure = true;
                         }
-                    }
-                    if (message)
-                    {
-                        foundStructure = true;
-                        AddMessageSpans(child, wrappers + 1, spans, exceptions);
+                        else if (read)
+                        {
+                            if (container)
+                            {
+                                childFound = Walk(child, wrappers + 1, spans, policy, watch, out int childLength, sink,
+                                    requireWhole: sink is not null);
+                                foundStructure |= childFound;
+                                // A quoted name can look like a string wrapper. Treat it as message text
+                                // unless the decoded value led to a structured payload.
+                                if (childFound || (childLength > 0 && decoded.AsSpan().TrimStart()[0] is ('{' or '[')))
+                                {
+                                    if (message && wrappers > 0)
+                                        AddMessageSpans(child, wrappers + 1, spans, policy.DisplayFieldExceptions, loginOnly: true);
+                                    message = false;
+                                }
+                            }
+                            if (message)
+                            {
+                                foundStructure = true;
+                                if (wrappers > 0)
+                                    AddMessageSpans(child, wrappers + 1, spans, policy.DisplayFieldExceptions);
+                                sink?.Leaves.Add(ToMapped(child));
+                            }
+                        }
+                        if (sink is not null && !namedPerson && !message && !childFound && (wantQuery || decoded.Contains('?')))
+                            sink.Queries.Add(ToMapped(child));
                     }
                 }
                 property = null;
@@ -94,12 +139,32 @@ internal static partial class NestedJsonMessagePersonNames
         return foundStructure;
     }
 
+    /// <summary>Match decoded property names using the same field policy as the log's quoted-field rules.</summary>
+    private static bool IsNamedPersonField(string? property, PrivacyPolicy policy)
+    {
+        if (property is null) return false;
+        string? type = policy.FieldType(property);
+        return type != "SECRET" && DisplayMaskRules.ForField(property, type ?? "TEXT") == "PERSON";
+    }
+
+    /// <summary>Mask the complete string value and retain the encoding depth of its source interval.</summary>
+    private static void AddNamedPerson(Frame value, List<EntitySpan> spans)
+    {
+        if (value.Text.Length == 0) return;
+        int start = value.SourceOffset(0);
+        int length = value.SourceOffset(value.Text.Length) - start;
+        spans.Add(new(start, length, "PERSON", NamedPersonPriority)
+        {
+            JsonEscapeLayers = length == value.Text.Length ? 0 : value.Depth
+        });
+    }
+
     /// <summary>Inspect only nested message values and strings with a possible JSON container prefix.</summary>
     private static bool ReadString(Utf8JsonReader reader, string? property, int wrappers,
-        out string decoded, out bool message, out bool container)
+        out string decoded, out bool message, out bool container, bool includeDirectMessages)
     {
         decoded = string.Empty;
-        message = wrappers > 0 && property is ("message" or "event.original");
+        message = (wrappers > 0 || includeDirectMessages) && property is ("message" or "event.original");
         container = false;
         if (!message && wrappers >= MaxWrappers) return false;
         ReadOnlySpan<byte> raw = reader.ValueSpan.TrimStart((byte)' ');
@@ -131,13 +196,51 @@ internal static partial class NestedJsonMessagePersonNames
     }
 
     // A wrapper can start with an escaped quote, bracket or leading JSON whitespace.
-    [GeneratedRegex("""\{(?=\s*["}])|\[(?=\s*[\[{"\]])|(?<!\\)"(?=\s*(?:[\[{]|\\+(?:"|[nrt]|u00(?:09|0[aAdD]|20|22|5[bB]|7[bB]))))""",
+    [GeneratedRegex("""\{(?=\s*["}])|\[(?=\s*[\[{"\]\dntf-])|(?<!\\)"(?=\s*(?:[\[{]|\\+(?:"|[nrt]|u00(?:09|0[aAdD]|20|22|5[bB]|7[bB]))))""",
         RegexOptions.CultureInvariant, 100)]
     private static partial Regex JsonStarts();
+
+    /// <summary>True when a raw JSON string can hold a query after JSON decoding.</summary>
+    private static bool QueryHint(ReadOnlySpan<byte> raw)
+    {
+        if (raw.IndexOf((byte)'?') >= 0 || raw.IndexOf((byte)'&') >= 0) return true;
+        ReadOnlySpan<byte> escapedAmp = "\\u0026"u8;
+        for (int i = 0; i + escapedAmp.Length <= raw.Length; i++)
+            if (raw.Slice(i, escapedAmp.Length).SequenceEqual(escapedAmp)) return true;
+        return false;
+    }
+
+    /// <summary>Project a decoded frame back to absolute source offsets.</summary>
+    private static MappedText ToMapped(Frame child) => new(child.Text, child.SourceOffsets, child.Depth);
+
+    /// <summary>Decoded text with source offsets, or an identity map for the original string.</summary>
+    internal readonly record struct MappedText(string Text, int[]? Offsets, int Layers)
+    {
+        internal int SourceOffset(int index) => Offsets is null ? index : Offsets[index];
+
+        /// <summary>Lift offsets from a decoded child through this region to the original log.</summary>
+        internal MappedText Compose(MappedText child)
+        {
+            if (Offsets is null || child.Offsets is null) return child;
+            var offsets = new int[child.Text.Length + 1];
+            for (int i = 0; i < offsets.Length; i++)
+                offsets[i] = SourceOffset(child.Offsets[i]);
+            return new(child.Text, offsets, Layers + child.Layers);
+        }
+    }
+
+    /// <summary>Ranges and decoded strings collected for explicit log-analysis routing.</summary>
+    internal sealed class Sink
+    {
+        internal readonly List<(int Start, int Length)> Ranges = new();
+        internal readonly List<MappedText> Leaves = new();
+        internal readonly List<MappedText> Queries = new();
+    }
 
     /// <summary>Map UTF-16 boundaries in one decoded value to the original log.</summary>
     private readonly record struct Frame(string Text, int Start, int[]? SourceOffsets)
     {
+        internal int Depth { get; init; }
         internal int SourceOffset(int index) => SourceOffsets is null ? index : SourceOffsets[index];
 
         /// <summary>Compose this value's JSON escape boundaries with its parent's source offsets.</summary>
@@ -145,7 +248,7 @@ internal static partial class NestedJsonMessagePersonNames
         {
             int[] offsets = JsonMessagePersonNames.BuildOffsetMap(Text.AsSpan(start, length), decoded.Length);
             for (int i = 0; i < offsets.Length; i++) offsets[i] = SourceOffset(start + offsets[i]);
-            return new(decoded, 0, offsets);
+            return new(decoded, 0, offsets) { Depth = Depth + 1 };
         }
     }
 }

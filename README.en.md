@@ -108,3 +108,9 @@ node --test tests/javascript/*.test.mjs
 `PrivacyEngine.SanitizeJson` provides the strict disclosure boundary. Display modes and the browser detector can miss sensitive data and produce false masks. Check `Allowed`, `SafeForAgent` and the selected API contract before passing results onward.
 
 Open-data sources and third-party licenses are listed in [the notices](notices/THIRD-PARTY-NOTICES.TXT). Inference runs locally. The browser example loads static assets from the same server.
+
+## Masking person names in JSON logs
+
+The PERSON field policy covers values under `fio`, `ФИО` and `fullName`, as well as component fields such as `firstName`, `lastName` / `surname` and `middleName` / `patronymic`. It works with ordinary JSON, escaped Unicode, and embedded JSON inside a `message` string. Property names and accompanying `trace.id`, `ticker` and `status` values are preserved in the tested cases.
+
+Use `SanitizeTypedLogForDisplay` with `LogAnalysisMode.Mixed` to pass separate detectors for prose and decoded JSON values. Explicit PERSON fields also work without a detector.

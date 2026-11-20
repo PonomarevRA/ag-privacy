@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace AgPrivacy;
@@ -13,7 +15,21 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
     internal TextRedactor(Pseudonymizer aliases, PrivacyPolicy policy, IPersonDetector? persons, IPersonDetector? proseModel)
         : this(aliases, policy, persons) => this.proseModel = proseModel;
 
+    private readonly IPersonDetector? structuredDetector;
+    private readonly LogAnalysisMode? analysisMode;
+
+    /// <summary>Route prose and structured detectors independently. Null mode keeps the legacy typed-log path.</summary>
+    internal TextRedactor(Pseudonymizer aliases, PrivacyPolicy policy, IPersonDetector? persons, IPersonDetector? proseModel,
+        IPersonDetector? structuredDetector, LogAnalysisMode analysisMode)
+        : this(aliases, policy, persons, proseModel)
+    {
+        this.structuredDetector = structuredDetector;
+        this.analysisMode = analysisMode;
+    }
+
     private static readonly Regex Parameters = new(@"[?&](?<name>[^=&#\s]{1,128})=(?<value>[^&#\s]*)", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, TimeSpan.FromMilliseconds(100));
+    private static readonly Regex RoutedParameters = new("""[?&](?<name>[^=&#?\s"'<>\\{}]{1,128})=(?<value>[^&#\s"'<>\\{}]*)""",
+        RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, TimeSpan.FromMilliseconds(100));
     private static readonly Regex Labeled = new(@"(?<name>[\p{L}_][\p{L}\p{N}_-]{0,95})\s*[:=]\s*(?:""(?<quoted>[^""\r\n]*)""|«(?<quoted>[^»\r\n]*)»|(?<value>[^\s&;,<>{}\r\n]+))", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking, TimeSpan.FromMilliseconds(100));
 
     /// <summary>Объединяет исходные интервалы по приоритету без placeholder-restore и его обходов.</summary>
@@ -55,11 +71,13 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
     /// <summary>Collect the same typed rules for an in-memory message or a bounded stream window.</summary>
     internal List<EntitySpan> FindTypedLogSpans(string text, List<LogMessageRange>? messages = null)
     {
+        if (analysisMode is not null)
+            return FindRoutedTypedLogSpans(text, messages, analysisMode.Value);
         // The name model mistakes property labels and gRPC method names for names in structured logs.
         // Named rules cover quoted person fields, and contextual lowercase detection still runs below.
         Match firstProperty = QuotedPropertyStarts().Match(text);
         var nestedNames = new List<EntitySpan>();
-        bool nestedStructure = NestedJsonMessagePersonNames.Add(text, nestedNames, policy.DisplayFieldExceptions);
+        bool nestedStructure = NestedJsonMessagePersonNames.Add(text, nestedNames, policy);
         bool structured = firstProperty.Success || nestedStructure;
         var spans = FindSpans(text, policy, structured ? null : persons, logMessage: true, includeGuids: true);
         RemoveMasterIds(text, spans);
@@ -113,7 +131,8 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
     private static partial Regex MasterIdProperties();
 
     /// <summary>Use named rules for quoted JSON fields without decoding or reserializing the log.</summary>
-    private void AddJsonPropertySpans(string text, Match firstProperty, List<EntitySpan> spans, List<LogMessageRange>? messages)
+    private void AddJsonPropertySpans(string text, Match firstProperty, List<EntitySpan> spans, List<LogMessageRange>? messages,
+        NestedJsonMessagePersonNames.Sink? routed = null)
     {
         var watch = Stopwatch.StartNew();
         for (Match property = firstProperty; property.Success; property = property.NextMatch())
@@ -137,7 +156,9 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
             else if (logMessage)
             {
                 if (delimiterSlashes == 0) messages?.Add(new(start, end));
-                JsonMessagePersonNames.Add(text, start, end - start, delimiterSlashes == 0, spans, policy.DisplayFieldExceptions, persons, proseModel);
+                IPersonDetector? spanModel = routed is null ? persons : null;
+                IPersonDetector? spanProse = routed is null ? proseModel : null;
+                JsonMessagePersonNames.Add(text, start, end - start, delimiterSlashes == 0, spans, policy.DisplayFieldExceptions, spanModel, spanProse);
             }
             else if (loginField)
                 TransliteratedPersonNames.AddJsonLogin(text, property.Groups["name"].Index, start, end - start, spans);
@@ -209,7 +230,7 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
             string type = previous.Type == "SECRET" || span.Type == "SECRET" ? "SECRET" : winner.Type;
             bool decode = winner.UrlEncoded && winner.Start == previous.Start && winner.Start + winner.Length == end;
             // An escape count belongs to an exact source interval, not to a wider union.
-            int layers = 0;
+            int layers = decode ? winner.JsonEscapeLayers : 0;
             if (!decode && type is ("PERSON" or "DATE" or "SECRET"))
             {
                 if (previous.Start + previous.Length == end) layers = previous.JsonEscapeLayers;
@@ -244,10 +265,12 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
         {
             if (type == "IP") replacement = "[IP]";
             else if (span.JsonNumber) replacement = "0";
+            else if (span.JsonEscapeLayers > 0 && span.UrlEncoded)
+                replacement = ReplaceEscapedQuery(raw, span.JsonEscapeLayers, type);
             else if (span.JsonEscapeLayers > 0)
                 replacement = JsonMessagePersonNames.ReplaceEscaped(value, span.JsonEscapeLayers, type, aliases);
             else replacement = aliases.ReplaceWithShape(type, value);
-            if (span.UrlEncoded) replacement = Uri.EscapeDataString(replacement);
+            if (span.UrlEncoded && span.JsonEscapeLayers == 0) replacement = Uri.EscapeDataString(replacement);
         }
         else if (display) replacement = aliases.ReplaceForDisplay(type, value, rule);
         else replacement = aliases.Replace(type, value);
@@ -262,14 +285,16 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
     }
 
     /// <summary>Find formal, labeled, URL and optional person-name spans before choosing a mask.</summary>
-    internal static List<EntitySpan> FindSpans(string text, PrivacyPolicy policy, IPersonDetector? persons, bool logMessage = false, bool includeGuids = false)
+    internal static List<EntitySpan> FindSpans(string text, PrivacyPolicy policy, IPersonDetector? persons, bool logMessage = false, bool includeGuids = false, bool skipParameters = false)
     {
         var spans = new List<EntitySpan>(RegexDetector.Find(text));
         if (logMessage && !includeGuids) spans.RemoveAll(span => span.Type == "GUID");
-        AddParameters(text, spans, policy, onlyKnown: logMessage);
+        if (!skipParameters) AddParameters(text, spans, policy, onlyKnown: logMessage);
         foreach (Match match in Labeled.Matches(text))
         {
-            string? type = policy.FieldType(match.Groups["name"].Value);
+            Group name = match.Groups["name"];
+            if (skipParameters && IsQueryName(text, name.Index)) continue;
+            string? type = policy.FieldType(name.Value);
             Group value = match.Groups["quoted"].Success ? match.Groups["quoted"] : match.Groups["value"];
             if (logMessage && match.Groups["name"].Value.Equals("authorization", StringComparison.OrdinalIgnoreCase) &&
                 (value.Value.Equals("Bearer", StringComparison.OrdinalIgnoreCase) ||
@@ -314,5 +339,206 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
             value = next;
         }
         return value;
+    }
+
+    /// <summary>Collect deterministic masks and route prose and structured spans in source coordinates.</summary>
+    private List<EntitySpan> FindRoutedTypedLogSpans(string text, List<LogMessageRange>? messages, LogAnalysisMode mode)
+    {
+        Match firstProperty = QuotedPropertyStarts().Match(text);
+        var nestedNames = new List<EntitySpan>();
+        var sink = new NestedJsonMessagePersonNames.Sink();
+        NestedJsonMessagePersonNames.Map(text, nestedNames, policy, sink);
+        bool jsonSyntax = firstProperty.Success || sink.Ranges.Count > 0;
+        var spans = FindSpans(text, policy, null, logMessage: true, includeGuids: true, skipParameters: true);
+        RemoveMasterIds(text, spans);
+        spans.AddRange(nestedNames);
+        if (!jsonSyntax)
+        {
+            TransliteratedPersonNames.AddMessageNames(text, 0, text.Length, spans);
+            LabelledCompoundPersonNames.Add(text, 0, text.Length, spans);
+            LogSensitiveFields.AddBirthDates(text, 0, text.Length, spans);
+            LogSensitiveFields.AddInlineSecrets(text, 0, text.Length, spans);
+        }
+        AddJsonPropertySpans(text, firstProperty, spans, messages, sink);
+        LogSensitiveFields.AddNumericSecrets(text, spans);
+        LogMasking.AddSpans(text, spans, null, policy.DisplayFieldExceptions);
+        LogNetworkAddresses.Add(text, spans);
+        if (!jsonSyntax) LogPersonContext.RemoveTechnicalSpans(text, 0, text.Length, spans);
+
+        var learned = new List<EntitySpan>();
+        var queries = new List<EntitySpan>();
+        RouteRegions(new(text, null, 0), sink, mode, learned, queries, 0);
+        // A rule matched against an encoded source can run into an escaped query delimiter.
+        // A valid parameter boundary is authoritative for a rule starting inside that value.
+        spans.AddRange(learned);
+        spans.RemoveAll(span => queries.Exists(query => span.Start >= query.Start
+            && span.Start < query.Start + query.Length && span.Start + span.Length > query.Start + query.Length));
+        spans.AddRange(queries);
+        TransliteratedPersonNames.PreserveTechnicalLogins(text, spans);
+        LogSensitiveFields.PreserveTraceIds(text, spans);
+        if (spans.Count > PrivacyLimits.Entities) throw new InvalidOperationException("entity-limit");
+        return spans;
+    }
+
+    /// <summary>Route gaps to the prose model and structured leaves to the structured model.</summary>
+    private void RouteRegions(NestedJsonMessagePersonNames.MappedText region, NestedJsonMessagePersonNames.Sink sink,
+        LogAnalysisMode mode, List<EntitySpan> learned, List<EntitySpan> queries, int depth)
+    {
+        if (depth > 8) throw new InvalidOperationException("analysis-limit");
+        IPersonDetector? model = mode == LogAnalysisMode.Structured ? null : proseModel;
+        int cursor = 0;
+        foreach (var (start, length) in sink.Ranges)
+        {
+            RouteSlice(region, cursor, start - cursor, model, learned, queries);
+            cursor = start + length;
+        }
+        RouteSlice(region, cursor, region.Text.Length - cursor, model, learned, queries);
+
+        foreach (var query in sink.Queries)
+            ProjectQueries(region.Compose(query), 0, query.Text.Length, queries);
+        foreach (var leaf in sink.Leaves)
+        {
+            var mapped = region.Compose(leaf);
+            var nested = new NestedJsonMessagePersonNames.Sink();
+            var nestedSpans = new List<EntitySpan>();
+            NestedJsonMessagePersonNames.Map(leaf.Text, nestedSpans, policy, nested);
+            if (nested.Ranges.Count > 0)
+            {
+                ProjectNamedPersons(mapped, nestedSpans, learned);
+                RouteRegions(mapped, nested, mode, learned, queries, depth + 1);
+            }
+            else
+                RouteSlice(mapped, 0, mapped.Text.Length, mode == LogAnalysisMode.Text ? null : structuredDetector, learned, queries);
+        }
+    }
+
+    /// <summary>Lift authoritative field spans from embedded JSON in a decoded message leaf.</summary>
+    private static void ProjectNamedPersons(NestedJsonMessagePersonNames.MappedText region,
+        List<EntitySpan> fields, List<EntitySpan> output)
+    {
+        foreach (var field in fields)
+        {
+            if (field.Priority != NestedJsonMessagePersonNames.NamedPersonPriority) continue;
+            int start = region.SourceOffset(field.Start);
+            int length = region.SourceOffset(field.Start + field.Length) - start;
+            int layers = field.JsonEscapeLayers;
+            if (length != field.Length || layers != 0) layers += region.Layers;
+            output.Add(field with { Start = start, Length = length, JsonEscapeLayers = layers });
+        }
+    }
+
+    /// <summary>Run one detector on a logical slice and project its validated spans to the original log.</summary>
+    private void RouteSlice(NestedJsonMessagePersonNames.MappedText region, int start, int length, IPersonDetector? model,
+        List<EntitySpan> learned, List<EntitySpan> queries)
+    {
+        if (length <= 0) return;
+        ProjectQueries(region, start, length, queries);
+        if (model is null || !HasWord(region.Text.AsSpan(start, length))) return;
+        string piece = region.Text.Substring(start, length);
+        var hits = new List<EntitySpan>(model.Find(piece));
+        if (hits.Count > PrivacyLimits.Entities) throw new InvalidOperationException("entity-limit");
+        foreach (var hit in hits)
+        {
+            if (hit.Start < 0 || hit.Length <= 0 || hit.Start > length - hit.Length || !PrivacyPolicy.EntityTypes.Contains(hit.Type))
+                throw new InvalidOperationException("invalid-span");
+        }
+        LogMasking.RemoveInstrumentNameSpans(piece, hits, policy.DisplayFieldExceptions);
+        LogPersonContext.RemoveTechnicalSpans(piece, 0, piece.Length, hits);
+        TransliteratedPersonNames.PreserveTechnicalLogins(piece, hits);
+        LogSensitiveFields.PreserveTraceIds(piece, hits);
+        foreach (var hit in hits)
+        {
+            int srcStart = region.SourceOffset(start + hit.Start);
+            int srcEnd = region.SourceOffset(start + hit.Start + hit.Length);
+            int escapeLayers = srcEnd - srcStart == hit.Length ? 0 : region.Layers;
+            learned.Add(hit with { Start = srcStart, Length = srcEnd - srcStart, JsonEscapeLayers = escapeLayers });
+            if (learned.Count > PrivacyLimits.Entities) throw new InvalidOperationException("entity-limit");
+        }
+    }
+
+    /// <summary>Mask only known query values and end the span before URL and JSON delimiters.</summary>
+    private void ProjectQueries(NestedJsonMessagePersonNames.MappedText query, int start, int length, List<EntitySpan> spans)
+    {
+        ReadOnlySpan<char> part = query.Text.AsSpan(start, length);
+        if (part.IndexOfAny('?', '&') < 0) return;
+        string normalized = NormalizeQueryDelimiters(part, out int[] decodedMap);
+        foreach (Match match in RoutedParameters.Matches(normalized))
+        {
+            string name = DecodeParameter(match.Groups["name"].Value);
+            string? type = policy.FieldType(name);
+            Group value = match.Groups["value"];
+            if (type is null || value.Length == 0) continue;
+            int decodedStart = start + decodedMap[value.Index];
+            int decodedEnd = start + decodedMap[value.Index + value.Length];
+            int srcStart = query.SourceOffset(decodedStart);
+            int srcEnd = query.SourceOffset(decodedEnd);
+            ReadOnlySpan<char> rawValue = query.Text.AsSpan(decodedStart, decodedEnd - decodedStart);
+            bool url = rawValue.IndexOfAny('%', '+') >= 0;
+            bool escaped = srcEnd - srcStart != rawValue.Length;
+            spans.Add(new EntitySpan(srcStart, srcEnd - srcStart, type, 300, url)
+            {
+                JsonEscapeLayers = escaped ? query.Layers : 0
+            });
+            if (spans.Count > PrivacyLimits.Entities) throw new InvalidOperationException("entity-limit");
+        }
+    }
+
+    /// <summary>Leave URL assignments to the query scanner, which also recognizes escaped ampersands.</summary>
+    private static bool IsQueryName(string text, int start)
+    {
+        if (start == 0) return false;
+        return text[start - 1] is '?' or '&'
+            || (start >= 6 && text.AsSpan(start - 6, 6).Equals("\\u0026", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>Treat a literal JSON unicode ampersand as a query delimiter without shifting later source offsets.</summary>
+    private static string NormalizeQueryDelimiters(ReadOnlySpan<char> text, out int[] map)
+    {
+        var output = new StringBuilder(text.Length);
+        var positions = new List<int>(text.Length + 1);
+        for (int i = 0; i < text.Length;)
+        {
+            if (i + 6 <= text.Length && text.Slice(i, 6).Equals("\\u0026", StringComparison.OrdinalIgnoreCase))
+            {
+                positions.Add(i);
+                output.Append('&');
+                i += 6;
+            }
+            else
+            {
+                positions.Add(i);
+                output.Append(text[i]);
+                i++;
+            }
+        }
+        positions.Add(text.Length);
+        map = positions.ToArray();
+        return output.ToString();
+    }
+
+    /// <summary>JSON-decode a query value, decode percent or plus whitespace, then restore both encodings.</summary>
+    private string ReplaceEscapedQuery(string raw, int layers, string type)
+    {
+        string decoded = raw;
+        int applied = 0;
+        for (int i = 0; i < layers && applied < 8; i++)
+        {
+            if (!JsonMessagePersonNames.TryDecode(decoded, out string next) || next == decoded) break;
+            decoded = next;
+            applied++;
+        }
+        decoded = DecodeParameter(decoded);
+        string replacement = Uri.EscapeDataString(aliases.ReplaceWithShape(type, decoded));
+        var encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+        for (int i = 0; i < applied; i++)
+            replacement = JsonEncodedText.Encode(replacement, encoder).ToString();
+        return replacement;
+    }
+
+    private static bool HasWord(ReadOnlySpan<char> text)
+    {
+        foreach (char c in text)
+            if (char.IsLetterOrDigit(c)) return true;
+        return false;
     }
 }

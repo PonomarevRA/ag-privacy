@@ -85,7 +85,7 @@ public sealed class PrivacyPolicy
     private static Dictionary<string, string> Defaults()
     {
         var result = new Dictionary<string, string>();
-        foreach (string name in new[] { "firstName", "lastName", "middleName", "fullName", "fio", "фио", "фамилия", "имя", "отчество", "author", "commentAuthor", "agentFullNameRus", "agentFullNameEng" }) result[NormalizeField(name)] = "PERSON";
+        foreach (string name in new[] { "firstName", "lastName", "surname", "middleName", "patronymic", "fullName", "fio", "фио", "фамилия", "имя", "отчество", "author", "commentAuthor", "agentFullNameRus", "agentFullNameEng" }) result[NormalizeField(name)] = "PERSON";
         foreach (string name in new[] { "password", "passwd", "pwd", "secret", "apiKey", "accessToken", "refreshToken", "idToken", "sessionToken", "clientSecret", "xApiKey", "csrfToken", "xsrfToken", "privateKey", "authorization", "bearer", "token", "cookie", "setCookie", "connectionString" }) result[NormalizeField(name)] = "SECRET";
         foreach (string name in new[] { "clientId", "personId", "accountId", "sessionId", "agreementNumber", "bankAccount", "snils", "passport", "documentNumber" }) result[NormalizeField(name)] = "IDENTIFIER";
         foreach (string name in new[] { "email", "mail" }) result[name] = "EMAIL";

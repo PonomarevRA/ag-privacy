@@ -111,9 +111,9 @@ static FileStream OpenStreamJournal(string path)
 /// <summary>Keep stdout for the masked stream and create a separate private journal.</summary>
 static async Task<int> StreamLogAsync(string[] args)
 {
-    if (!TryReadStreamOptions(args, out int positional, out string? personShadowPath, out string? numericShadowPath, out string? personalIdShadowPath, out string? innPath, out string? kppPath, out string? tokenPath, out string? prosePath))
+    if (!TryReadStreamOptions(args, out int positional, out string? personShadowPath, out string? numericShadowPath, out string? personalIdShadowPath, out string? innPath, out string? kppPath, out string? tokenPath, out string? prosePath, out string? analysis, out string? structuredPath))
     {
-        Console.Error.WriteLine("usage: stream-log POLICY_FILE PRIVATE_KEY_FILE SCOPE NEW_JOURNAL_FILE [LOCAL_MODEL_FILE] [--person-context-shadow MODEL] [--numeric-context-shadow MODEL] [--personal-id-shadow MODEL] [--inn-context-shadow MODEL] [--kpp-context-shadow MODEL] [--token-context-shadow MODEL] [--person-prose-model MODEL]");
+        Console.Error.WriteLine("usage: stream-log POLICY_FILE PRIVATE_KEY_FILE SCOPE NEW_JOURNAL_FILE [LOCAL_MODEL_FILE] [--person-context-shadow MODEL] [--numeric-context-shadow MODEL] [--personal-id-shadow MODEL] [--inn-context-shadow MODEL] [--kpp-context-shadow MODEL] [--token-context-shadow MODEL] [--person-prose-model MODEL] [--log-analysis text|structured|mixed] [--structured-person-model MODEL]");
         return 2;
     }
 
@@ -136,10 +136,24 @@ static async Task<int> StreamLogAsync(string[] args)
         if (personalIdShadowPath is not null)
             numeric = (numeric ?? NumericContextShadow.Empty()).WithPersonalIdShadow(PersonalIdShadow.Load(ReadFile(personalIdShadowPath, PersonalIdShadow.ModelBytes)));
         var token = tokenPath is null ? null : TokenContextShadow.Load(ReadFile(tokenPath, TokenContextShadow.ModelBytes));
+        var prose = prosePath is null ? null : MicroPersonModel.Load(ReadFile(prosePath, MicroPersonModel.MaximumFileBytes));
+        StreamingPrivacyMasker pipe;
+        if (analysis is null)
+            pipe = new StreamingPrivacyMasker(policy, aliases, model, shadow, numeric, token, prose);
+        else
+        {
+            LogAnalysisMode mode = analysis switch
+            {
+                "text" => LogAnalysisMode.Text,
+                "structured" => LogAnalysisMode.Structured,
+                _ => LogAnalysisMode.Mixed
+            };
+            var proseDetector = prose ?? model;
+            var structuredDetector = structuredPath is null ? null : MicroPersonModel.Load(ReadFile(structuredPath, MicroPersonModel.MaximumFileBytes));
+            pipe = new StreamingPrivacyMasker(policy, aliases, null, shadow, numeric, token, proseDetector, mode, structuredDetector);
+        }
         await using var journalFile = OpenStreamJournal(args[4]);
         await using var journal = new StreamWriter(journalFile, new UTF8Encoding(false, true));
-        var prose = prosePath is null ? null : MicroPersonModel.Load(ReadFile(prosePath, MicroPersonModel.MaximumFileBytes));
-        var pipe = new StreamingPrivacyMasker(policy, aliases, model, shadow, numeric, token, prose);
         var result = await pipe.MaskAsync(Console.OpenStandardInput(), Console.OpenStandardOutput(), journal);
         if (result.PersonContext is not null || result.NumericContext is not null || result.TokenContext is not null)
             WriteShadowCounts(result);
@@ -153,9 +167,9 @@ static async Task<int> StreamLogAsync(string[] args)
 }
 
 /// <summary>Accept each optional model flag once, with an optional positional person detector before the flags.</summary>
-static bool TryReadStreamOptions(string[] args, out int positional, out string? person, out string? numeric, out string? personalId, out string? inn, out string? kpp, out string? token, out string? prose)
+static bool TryReadStreamOptions(string[] args, out int positional, out string? person, out string? numeric, out string? personalId, out string? inn, out string? kpp, out string? token, out string? prose, out string? analysis, out string? structured)
 {
-    person = numeric = personalId = inn = kpp = token = prose = null;
+    person = numeric = personalId = inn = kpp = token = prose = analysis = structured = null;
     positional = Math.Min(args.Length, 5);
     if (positional < 5) return false;
     if (args.Length > positional && !args[positional].StartsWith("--", StringComparison.Ordinal)) positional++;
@@ -172,9 +186,14 @@ static bool TryReadStreamOptions(string[] args, out int positional, out string? 
             case "--kpp-context-shadow" when kpp is null: kpp = args[i + 1]; break;
             case "--token-context-shadow" when token is null: token = args[i + 1]; break;
             case "--person-prose-model" when prose is null: prose = args[i + 1]; break;
+            case "--log-analysis" when analysis is null: analysis = args[i + 1]; break;
+            case "--structured-person-model" when structured is null: structured = args[i + 1]; break;
             default: return false;
         }
     }
+    if (structured is not null && analysis is null) return false;
+    if (analysis is not null && analysis is not ("text" or "structured" or "mixed")) return false;
+    if (analysis is not null && prose is not null && positional > 5) return false;
     return numeric is null || (inn is null && kpp is null);
 }
 

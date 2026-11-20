@@ -48,6 +48,15 @@ public sealed class StreamingPrivacyMasker(PrivacyPolicy policy, Pseudonymizer a
         redactor = new(aliases, policy, persons, proseModel);
     }
 
+    /// <summary>Route an explicit offline analysis mode across independently loaded prose and structured detectors.</summary>
+    public StreamingPrivacyMasker(PrivacyPolicy policy, Pseudonymizer aliases, IPersonDetector? persons,
+        PersonContextShadow? personContext, NumericContextShadow? numericContext, TokenContextShadow? tokenContext,
+        IPersonDetector? proseModel, LogAnalysisMode analysisMode, IPersonDetector? structuredDetector)
+        : this(policy, aliases, persons, personContext, numericContext, tokenContext, proseModel)
+    {
+        redactor = new(aliases, policy, persons, proseModel, structuredDetector, analysisMode);
+    }
+
     /// <summary>
     /// Read and write incrementally without a whole-stream byte limit. Caller owns the streams and optional
     /// JSONL journal. A failing read or write can leave an already emitted prefix at the destination.
