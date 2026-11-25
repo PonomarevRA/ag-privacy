@@ -1,0 +1,6 @@
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":1,"message":"{\"message\":\"в журнале повторной операции Илья Севиренков указан рядом с архивом\"}"}
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":2,"message":"\"{\\\"message\\\":\\\"the indexing job associated Zimirov Danil with a delayed event\\\"}\""}
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":3,"message":"\"{\\\"message\\\":\\\"manual archive review referenced \\\\u041b\\\\u0430\\\\u0442\\\\u0435\\\\u0440\\\\u043d\\\\u043e\\\\u0432 \\\\u0418\\\\u043b\\\\u044c\\\\u044f during a sync pass\\\"}\""}
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":4,"message":"{\"message\":\"по итогам сверки переоткрыл сводный индекс попало в рабочий список\"}"}
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":5,"message":"\"{\\\"message\\\":\\\"the indexing job associated buffer warmup with a delayed event\\\"}\""}
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":6,"message":"{\"message\":\"обработчик записал Ярвенцева Даниила после проверки\"}"}

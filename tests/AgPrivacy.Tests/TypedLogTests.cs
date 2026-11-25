@@ -35,7 +35,7 @@ public sealed class TypedLogTests
             ["Name"] = "Консультация клиента",
             ["Existing"] = "[REDACTED:v1:EMAIL:" + new string('a', 64) + "]"
         };
-        const string prefix = """Unary-запрос "\"/Demo.RecordsService/GetRecords\"" обработан за "1" мс. Ответ: """;
+        const string prefix = """Unary-запрос "\"/ChatConversations.ChatConversationsService/GetTopicsByConversations\"" обработан за "1" мс. Ответ: """;
         string payload = JsonSerializer.Serialize(input, options);
         for (int i = 0; i < escapeDepth; i++) payload = JsonSerializer.Serialize(payload, options);
 

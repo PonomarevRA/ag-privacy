@@ -248,13 +248,23 @@ public sealed class StreamingPrivacyMasker(PrivacyPolicy policy, Pseudonymizer a
     private async Task WriteRegionAsync(State state, string text, int from, int end, List<EntitySpan> spans,
         TextWriter output, TextWriter? journal, CancellationToken cancellationToken)
     {
-        var result = new StringBuilder(end - from);
-        var records = new List<StreamReplacement>();
-        int offset = from;
-        foreach (var span in spans)
+        int firstSpan = 0;
+        while (firstSpan < spans.Count && spans[firstSpan].Start + spans[firstSpan].Length <= from)
+            firstSpan++;
+        if (firstSpan == spans.Count || spans[firstSpan].Start >= end)
         {
+            await output.WriteAsync(text.AsMemory(from, end - from), cancellationToken).ConfigureAwait(false);
+            await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        var result = new StringBuilder(end - from);
+        List<StreamReplacement>? records = null;
+        int offset = from;
+        for (int i = firstSpan; i < spans.Count; i++)
+        {
+            var span = spans[i];
             int last = span.Start + span.Length;
-            if (last <= from) continue;
             if (span.Start >= end) break;
             int first = Math.Max(span.Start, from);
             result.Append(text, offset, first - offset);
@@ -269,7 +279,7 @@ public sealed class StreamingPrivacyMasker(PrivacyPolicy policy, Pseudonymizer a
                     journal: journal is not null);
                 result.Append(replacement);
                 if (id is not null && state.MarkJournal(id))
-                    records.Add(new(id, rule, replacement));
+                    (records ??= []).Add(new(id, rule, replacement));
             }
             state.Replacements++;
             offset = last;
@@ -277,7 +287,7 @@ public sealed class StreamingPrivacyMasker(PrivacyPolicy policy, Pseudonymizer a
         result.Append(text, offset, end - offset);
         await output.WriteAsync(result.ToString().AsMemory(), cancellationToken).ConfigureAwait(false);
         await output.FlushAsync(cancellationToken).ConfigureAwait(false);
-        if (journal is null || records.Count == 0) return;
+        if (journal is null || records is null) return;
         foreach (var record in records)
         {
             string line = JsonSerializer.Serialize(record, PrivacyJsonContext.Default.StreamReplacement);

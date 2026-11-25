@@ -1,6 +1,6 @@
 # ag-privacy
 
-[Русский](README.ru.md) · [English](README.en.md)
+[Русский](README.ru.md) · [English](README.en.md) · [FI/FIO recall preview](docs/recall337-preview.en.md)
 
 A local .NET 10 library for masking JSON, log messages, CSV, TSV and XML. It provides a streaming CLI, a local UI, ONNX Runtime integration and a browser person detector using WebNN. Surname lists are external training inputs. Inference uses model weights, format rules and context.
 

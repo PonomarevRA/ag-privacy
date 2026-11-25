@@ -1,0 +1,6 @@
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":1,"message":"{\"message\":\"в журнале повторной операции Шэпи Азсюхяхдтц указан рядом с архивом\"}"}
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":2,"message":"\"{\\\"message\\\":\\\"the indexing job associated Loxddpt Rianw with a delayed event\\\"}\""}
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":3,"message":"\"{\\\"message\\\":\\\"manual archive review referenced Номухшвэ Йшжа during a sync pass\\\"}\""}
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":4,"message":"{\"message\":\"по итогам сверки переоткрыл сводный индекс попало в рабочий список\"}"}
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":5,"message":"\"{\\\"message\\\":\\\"the indexing job associated buffer warmup with a delayed event\\\"}\""}
+{"trace.id":"a3b4c5d6e7f809101122334455667788","ticker":"TEST","sequence":6,"message":"{\"message\":\"обработчик записал Ярвенцева Даниила после проверки\"}"}

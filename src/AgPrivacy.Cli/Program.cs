@@ -22,8 +22,21 @@ try
         finally{CryptographicOperations.ZeroMemory(privateKey);}
         using(module)
         using(var verifiedInput=new BufferedStream(Console.OpenStandardInput(),16384))
+        using(var verifiedOutput=Console.OpenStandardOutput())
         {
-            while(ReadLine(verifiedInput) is { } line)Console.WriteLine(JsonSerializer.Serialize(module.SanitizeJson(line),PrivacyJsonContext.Default.PrivacyResult));
+            byte[] lineEnding = Encoding.UTF8.GetBytes(Console.Out.NewLine);
+            bool utf8Output = Console.OutputEncoding.CodePage == Encoding.UTF8.CodePage;
+            while (ReadLine(verifiedInput) is { } line)
+            {
+                byte[] result = module.SanitizeJsonUtf8(line);
+                if (utf8Output)
+                {
+                    verifiedOutput.Write(result);
+                    verifiedOutput.Write(lineEnding);
+                    verifiedOutput.Flush();
+                }
+                else Console.WriteLine(Encoding.UTF8.GetString(result));
+            }
         }
         return 0;
     }
@@ -149,7 +162,7 @@ static async Task<int> StreamLogAsync(string[] args)
                 _ => LogAnalysisMode.Mixed
             };
             var proseDetector = prose ?? model;
-            var structuredDetector = structuredPath is null ? null : MicroPersonModel.Load(ReadFile(structuredPath, MicroPersonModel.MaximumFileBytes));
+            var structuredDetector = structuredPath is null ? null : SpanPersonDetector.LoadModel(ReadFile(structuredPath, SpanPersonDetector.MaximumFileBytes));
             pipe = new StreamingPrivacyMasker(policy, aliases, null, shadow, numeric, token, proseDetector, mode, structuredDetector);
         }
         await using var journalFile = OpenStreamJournal(args[4]);

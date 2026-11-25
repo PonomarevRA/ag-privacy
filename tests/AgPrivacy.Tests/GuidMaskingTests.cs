@@ -22,9 +22,9 @@ public sealed class GuidMaskingTests
         string bracedTopic = "{" + Topic + "}";
         string bracedMaster = "{" + Master + "}";
         string json = $$$$"""
-            {"Records":{"{{{{bracedTopic}}}}":{"Id":"{{{{Id}}}}","MasterId":"{{{{bracedMaster}}}}","RelatedId":"{{{{Master}}}}","Name":"Topic fixture","Parent":null}}}
+            {"ConversationsTopics":{"{{{{bracedTopic}}}}":{"Id":"{{{{Id}}}}","MasterId":"{{{{bracedMaster}}}}","RelatedId":"{{{{Master}}}}","Name":"Topic fixture","Parent":null}}}
             """;
-        const string method = "/Demo.RecordsService/GetRecords";
+        const string method = "/ChatConversations.ChatConversationsService/GetTopicsByConversations";
         string prefix = $"Unary-запрос {Encode(method, 2)} обработан за \"1\" мс. Ответ: ";
         var result = engine.SanitizeGuidsForDisplay(prefix + Encode(json, depth));
 
@@ -37,7 +37,7 @@ public sealed class GuidMaskingTests
         string payload = clean[prefix.Length..];
         for (int i = 0; i < depth; i++) payload = JsonSerializer.Deserialize<string>(payload)!;
         using var document = JsonDocument.Parse(payload);
-        var topic = Assert.Single(document.RootElement.GetProperty("Records").EnumerateObject());
+        var topic = Assert.Single(document.RootElement.GetProperty("ConversationsTopics").EnumerateObject());
         Assert.Matches(@"^\{\[REDACTED:v1:GUID:[0-9a-f]{64}\]\}$", topic.Name);
         Assert.Matches(@"^\[REDACTED:v1:GUID:[0-9a-f]{64}\]$", topic.Value.GetProperty("Id").GetString()!);
         Assert.Equal("{" + Master + "}", topic.Value.GetProperty("MasterId").GetString());

@@ -34,7 +34,7 @@ public class SoftPartTests
     [InlineData("birthPlace", "Тестоград", "Тестоград")]
     [InlineData("signatureSample", "Синтетическая подпись", "Синтетическая подпись")]
     [InlineData("passportIssuer", "Синтетический орган", "Синтетический орган")]
-    public void MasksSyntheticPartialFormat(string field, string original, string expected)
+    public void MasksSyntheticConfluenceCase(string field, string original, string expected)
     {
         using var aliases = new Pseudonymizer(new byte[32], "test-soft-part");
         var input = new JsonObject { [field] = original };

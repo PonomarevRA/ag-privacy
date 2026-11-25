@@ -367,7 +367,7 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
 
         var learned = new List<EntitySpan>();
         var queries = new List<EntitySpan>();
-        RouteRegions(new(text, null, 0), sink, mode, learned, queries, 0);
+        RouteRegions(new(text, null, 0), sink, mode, learned, queries, [], 0);
         // A rule matched against an encoded source can run into an escaped query delimiter.
         // A valid parameter boundary is authoritative for a rule starting inside that value.
         spans.AddRange(learned);
@@ -382,17 +382,17 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
 
     /// <summary>Route gaps to the prose model and structured leaves to the structured model.</summary>
     private void RouteRegions(NestedJsonMessagePersonNames.MappedText region, NestedJsonMessagePersonNames.Sink sink,
-        LogAnalysisMode mode, List<EntitySpan> learned, List<EntitySpan> queries, int depth)
+        LogAnalysisMode mode, List<EntitySpan> learned, List<EntitySpan> queries, List<EntitySpan> hits, int depth)
     {
         if (depth > 8) throw new InvalidOperationException("analysis-limit");
         IPersonDetector? model = mode == LogAnalysisMode.Structured ? null : proseModel;
         int cursor = 0;
         foreach (var (start, length) in sink.Ranges)
         {
-            RouteSlice(region, cursor, start - cursor, model, learned, queries);
+            RouteSlice(region, cursor, start - cursor, model, learned, queries, hits);
             cursor = start + length;
         }
-        RouteSlice(region, cursor, region.Text.Length - cursor, model, learned, queries);
+        RouteSlice(region, cursor, region.Text.Length - cursor, model, learned, queries, hits);
 
         foreach (var query in sink.Queries)
             ProjectQueries(region.Compose(query), 0, query.Text.Length, queries);
@@ -405,10 +405,10 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
             if (nested.Ranges.Count > 0)
             {
                 ProjectNamedPersons(mapped, nestedSpans, learned);
-                RouteRegions(mapped, nested, mode, learned, queries, depth + 1);
+                RouteRegions(mapped, nested, mode, learned, queries, hits, depth + 1);
             }
             else
-                RouteSlice(mapped, 0, mapped.Text.Length, mode == LogAnalysisMode.Text ? null : structuredDetector, learned, queries);
+                RouteSlice(mapped, 0, mapped.Text.Length, mode == LogAnalysisMode.Text ? null : structuredDetector, learned, queries, hits);
         }
     }
 
@@ -429,13 +429,25 @@ public sealed partial class TextRedactor(Pseudonymizer aliases, PrivacyPolicy po
 
     /// <summary>Run one detector on a logical slice and project its validated spans to the original log.</summary>
     private void RouteSlice(NestedJsonMessagePersonNames.MappedText region, int start, int length, IPersonDetector? model,
-        List<EntitySpan> learned, List<EntitySpan> queries)
+        List<EntitySpan> learned, List<EntitySpan> queries, List<EntitySpan> hits)
     {
         if (length <= 0) return;
         ProjectQueries(region, start, length, queries);
-        if (model is null || !HasWord(region.Text.AsSpan(start, length))) return;
-        string piece = region.Text.Substring(start, length);
-        var hits = new List<EntitySpan>(model.Find(piece));
+        ReadOnlySpan<char> slice = region.Text.AsSpan(start, length);
+        if (model is null || !HasWord(slice)) return;
+        hits.Clear();
+        string piece;
+        if (model is MicroPersonModel builtIn)
+        {
+            builtIn.Find(slice, hits);
+            if (hits.Count == 0) return;
+            piece = region.Text.Substring(start, length);
+        }
+        else
+        {
+            piece = region.Text.Substring(start, length);
+            hits.AddRange(model.Find(piece));
+        }
         if (hits.Count > PrivacyLimits.Entities) throw new InvalidOperationException("entity-limit");
         foreach (var hit in hits)
         {

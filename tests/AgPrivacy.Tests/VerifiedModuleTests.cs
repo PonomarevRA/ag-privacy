@@ -5,6 +5,29 @@ using Xunit;
 namespace AgPrivacy.Tests;
 public class VerifiedModuleTests
 {
+    [Theory]
+    [InlineData(PrivacyProtectionMode.Strict)]
+    [InlineData(PrivacyProtectionMode.CredentialsOnly)]
+    [InlineData(PrivacyProtectionMode.Off)]
+    public void VerifiedUtf8MatchesTheObjectResponseAndKeepsOutputLimits(PrivacyProtectionMode mode)
+    {
+        using var fixture = new VerifiedFixture();
+        fixture.Choose(mode);
+        using var module = fixture.Open();
+        const string input = "{\"token\":\"SYNTHETIC_CANARY\",\"status\":\"готово\"}";
+        byte[] expected = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(
+            module.SanitizeJson(input), PrivacyJsonContext.Default.PrivacyResult);
+        Assert.Equal(expected, module.SanitizeJsonUtf8(input));
+
+        var config = fixture.Config();
+        config["maxOutputBytes"] = 128;
+        fixture.Write(config);
+        using var constrained = fixture.Open();
+        using var response = System.Text.Json.JsonDocument.Parse(constrained.SanitizeJsonUtf8(input));
+        Assert.False(response.RootElement.GetProperty("Allowed").GetBoolean());
+        Assert.DoesNotContain("SYNTHETIC_CANARY", response.RootElement.GetRawText());
+    }
+
     [Fact]
     public void StrictSnapshotIsVerifiedFrozenAndDisposedFailClosed()
     {

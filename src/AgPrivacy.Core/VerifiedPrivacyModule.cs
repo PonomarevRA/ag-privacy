@@ -46,11 +46,20 @@ public sealed class VerifiedPrivacyModule:IDisposable
         catch(Exception) {throw new PrivacyConfigurationException();}
     }
     /// <summary>One complete unit. Serializes disposal with work; configured limits only tighten hard ceilings. Never exposes unapproved heuristic output.</summary>
-    public PrivacyResult SanitizeJson(string json)
+    public PrivacyResult SanitizeJson(string json) => MeasureSanitizeJson(json, out _);
+
+    /// <summary>Return the verified UTF-8 response using the same bytes checked against the output budget.</summary>
+    public byte[] SanitizeJsonUtf8(string json)
+    {
+        PrivacyResult result = MeasureSanitizeJson(json, out byte[]? serialized);
+        return serialized ?? JsonSerializer.SerializeToUtf8Bytes(result, PrivacyJsonContext.Default.PrivacyResult);
+    }
+
+    private PrivacyResult MeasureSanitizeJson(string json, out byte[]? serialized)
     {
         long started = PrivacyMetrics.Start();
         PrivacyResult? result = null;
-        try { return result = SanitizeJsonCore(json); }
+        try { return result = SanitizeJsonCore(json, out serialized); }
         finally
         {
             // Publish outside the disposal lock. This timing includes time waiting to enter it.
@@ -65,8 +74,9 @@ public sealed class VerifiedPrivacyModule:IDisposable
     }
 
     /// <summary>Apply the signed profile and validate the complete response before reporting its outcome.</summary>
-    private PrivacyResult SanitizeJsonCore(string json)
+    private PrivacyResult SanitizeJsonCore(string json, out byte[]? serialized)
     {
+        serialized = null;
         lock(sync)
         {
             if(disposed)return Blocked();
@@ -88,7 +98,9 @@ public sealed class VerifiedPrivacyModule:IDisposable
                 else result=engine.SanitizeVerifiedJson(json);
                 if(!result.Allowed || (profile.Mode==PrivacyProtectionMode.Strict&&!result.SafeForAgent))return Blocked();
                 byte[] output=JsonSerializer.SerializeToUtf8Bytes(result,PrivacyJsonContext.Default.PrivacyResult);
-                return output.Length>profile.MaxOutputBytes?Blocked():result;
+                if(output.Length>profile.MaxOutputBytes)return Blocked();
+                serialized = output;
+                return result;
             }
             catch(Exception){return Blocked();}
         }
