@@ -1,0 +1,6 @@
+{"trace.id":"4bf92f3577b34da6a3ce929d0e0e4736","ticker":"MOCK","sequence":1,"message":"у проходной Илья Ладворов подписал квитанцию"}
+{"trace.id":"4bf92f3577b34da6a3ce929d0e0e4736","ticker":"MOCK","sequence":2,"message":"\"{\\\"message\\\":\\\"\\\\u0432 \\\\u0430\\\\u0440\\\\u0445\\\\u0438\\\\u0432 \\\\u043f\\\\u0435\\\\u0440\\\\u0435\\\\u043d\\\\u0435\\\\u0441\\\\u043b\\\\u0438 \\\\u043a\\\\u043e\\\\u043c\\\\u043c\\\\u0435\\\\u043d\\\\u0442\\\\u0430\\\\u0440\\\\u0438\\\\u0439 \\\\u043e\\\\u0442 \\\\u0418\\\\u043b\\\\u044c\\\\u044f \\\\u041b\\\\u0430\\\\u0434\\\\u0432\\\\u043e\\\\u0440\\\\u043e\\\\u0432 \\\\u043f\\\\u043e\\\\u0441\\\\u043b\\\\u0435 \\\\u043e\\\\u0431\\\\u0445\\\\u043e\\\\u0434\\\\u0430\\\"}\""}
+{"trace.id":"4bf92f3577b34da6a3ce929d0e0e4736","ticker":"MOCK","sequence":3,"message":"{\"message\":\"записку прислал получатель Илья Ладворов после осмотра\"}"}
+{"trace.id":"4bf92f3577b34da6a3ce929d0e0e4736","ticker":"MOCK","sequence":4,"message":"\"{\\\"message\\\":\\\"the employee baranovra confirmed handoff\\\"}\""}
+{"trace.id":"4bf92f3577b34da6a3ce929d0e0e4736","ticker":"MOCK","sequence":5,"message":"{\"message\":\"the service recorded zakrepil gruzovoy list beside the loader\"}"}
+{"trace.id":"4bf92f3577b34da6a3ce929d0e0e4736","ticker":"MOCK","sequence":6,"message":"queue status processed is stable"}

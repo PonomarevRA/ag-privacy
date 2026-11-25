@@ -17,6 +17,15 @@ internal static partial class TransliteratedPersonNames
         "a b v g d e zh z i i k l m n o p r s t u f kh tc ch sh shch _ y _ e iu ia".Split(' '),
     ];
 
+    /// <summary>Check an ambiguous adjective ending against the immediately following technical noun.</summary>
+    private static bool IsCompactTechnicalPhrase(ReadOnlySpan<char> value, ReadOnlySpan<char> after) =>
+        !value.Contains('_') && (value.EndsWith("ovoy", StringComparison.OrdinalIgnoreCase) ||
+            value.EndsWith("evoy", StringComparison.OrdinalIgnoreCase)) && TechnicalNounAfterCompact().IsMatch(after);
+
+    [GeneratedRegex(@"\A[ \t]+(?:list|talon|paket|reestr|zhurnal|catalog|manifest|document|queue|buffer|report|file)\b",
+        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.NonBacktracking, 100)]
+    private static partial Regex TechnicalNounAfterCompact();
+
     /// <summary>Require a given name and surname, plus patronymic evidence for a three-word value.</summary>
     internal static bool IsMatch(string first, string second, string? third)
     {
@@ -104,6 +113,11 @@ internal static partial class TransliteratedPersonNames
             if (!isName && !separated.Success && IsContextualShortLogin(match.Groups["compact"].ValueSpan) &&
                 PersonContextShadow.HasPersonEvidence(text, new(start, start + length), match.Index, match.Index + match.Length))
                 isName = true;
+            int end = match.Index + match.Length;
+            if (isName && !separated.Success &&
+                IsCompactTechnicalPhrase(match.Groups["compact"].ValueSpan, text.AsSpan(end, start + length - end)) &&
+                !PersonContextShadow.HasPersonEvidence(text, new(start, start + length), match.Index, end))
+                continue;
             if (isName && !LogPersonContext.IsTechnicalValue(text, start, match.Index)) spans.Add(new(match.Index, match.Length, "PERSON", 50));
         }
     }

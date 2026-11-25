@@ -162,7 +162,7 @@ static async Task<int> StreamLogAsync(string[] args)
                 _ => LogAnalysisMode.Mixed
             };
             var proseDetector = prose ?? model;
-            var structuredDetector = structuredPath is null ? null : SpanPersonDetector.LoadModel(ReadFile(structuredPath, SpanPersonDetector.MaximumFileBytes));
+            var structuredDetector = structuredPath is null ? null : PilotSpanSelection.Load(ReadFile(structuredPath, PilotSpanSelection.MaximumFileBytes));
             pipe = new StreamingPrivacyMasker(policy, aliases, null, shadow, numeric, token, proseDetector, mode, structuredDetector);
         }
         await using var journalFile = OpenStreamJournal(args[4]);

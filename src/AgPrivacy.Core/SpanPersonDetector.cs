@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Numerics;
 
 namespace AgPrivacy;
 
@@ -8,6 +9,8 @@ public sealed class SpanPersonDetector
 {
     public const int FeatureCount = 1 << 17;
     public const int MaximumFileBytes = 12 + FeatureCount * sizeof(float) + MicroPersonModel.MaximumFileBytes;
+    // Each window covers at most four 256-character tokens, with two n-grams per character.
+    private const int MaximumWindowFeatures = 2200;
     private static ReadOnlySpan<byte> Magic => "AGSPAN01"u8;
     private readonly float[] weights;
     private readonly float threshold;
@@ -59,24 +62,47 @@ public sealed class SpanPersonDetector
     }
 
     /// <summary>Keep scored intervals in priority order while resolving overlaps deterministically.</summary>
-    public IReadOnlyList<EntitySpan> Find(string text)
+    public IReadOnlyList<EntitySpan> Find(string text) => Find(text, null);
+
+    /// <summary>Score candidate intervals using the optional validation model.</summary>
+    internal IReadOnlyList<EntitySpan> Find(string text, PilotSpanSelection? selection)
     {
+        int wholeBalance = selection is null ? 0 : PilotSpanSelection.AlphabetBalance(text);
         var accepted = new List<((int Start, int End) Span, float Value)>();
         var tokens = MicroPersonModel.Tokenize(text);
         var previous = parent.Find(text);
         var scripts = ReadAlphabets(tokens);
-        // At most four 256-character words. Each produces at most two n-grams per character.
-        Span<int> indices = stackalloc int[2200];
-        Span<ulong> seen = stackalloc ulong[FeatureCount / 64];
-        seen.Clear();
-        var features = new FeatureSet(seen, indices);
+        Span<ulong> blocks = stackalloc ulong[FeatureCount / 64];
+        Span<ulong> occupiedBlocks = stackalloc ulong[FeatureCount / (64 * 64)];
+        Span<int> wordHashes = stackalloc int[MaximumWindowFeatures];
+        var features = new FeatureSet(blocks, occupiedBlocks);
+        int currentStart = -1;
+        int cachedThrough = -1;
+        int written = 0;
+        int priorStart = 0;
         foreach (var (first, last, end) in Ranges(text, tokens))
         {
-            Collect(ref features, text, tokens, scripts, previous, first, last, end);
-            float value = Score(weights, features.Sorted());
-            if (value >= threshold)
+            if (first != currentStart)
+            {
+                written = 0;
+                currentStart = first;
+                cachedThrough = first - 1;
+                priorStart = FirstPossibleOverlap(previous, priorStart, tokens[first].Start);
+            }
+            // Extending the endpoint preserves the hashed words and gaps already in this prefix.
+            while (cachedThrough < last)
+            {
+                int next = ++cachedThrough;
+                written += WriteWordAndGap(wordHashes[written..], text, tokens, scripts, first, next);
+            }
+            foreach (int feature in wordHashes[..written])
+                features.Add(feature);
+            CollectContext(ref features, text, tokens, scripts, previous, priorStart, first, last, end);
+            float value = features.ScoreAndReset(weights);
+            bool keep = selection is null ? value >= threshold :
+                selection.Accept(text, tokens, first, last, end, wholeBalance, value, out value);
+            if (keep)
                 accepted.Add(((tokens[first].Start, end), value));
-            features.Reset();
         }
         accepted.Sort((left, right) =>
         {
@@ -86,11 +112,30 @@ public sealed class SpanPersonDetector
         var result = new List<EntitySpan>();
         foreach (var (window, _) in accepted)
         {
-            if (!result.Exists(span => span.Start < window.End && span.Start + span.Length > window.Start))
+            if (!Overlaps(result, window.Start, window.End))
                 result.Add(new EntitySpan(window.Start, window.End - window.Start, "PERSON"));
         }
         result.Sort((left, right) => left.Start.CompareTo(right.Start));
         return result;
+    }
+
+    /// <summary>Check whether a higher-scoring interval already occupies any of this window.</summary>
+    private static bool Overlaps(List<EntitySpan> spans, int start, int end)
+    {
+        foreach (EntitySpan span in spans)
+        {
+            if (span.Start < end && span.Start + span.Length > start)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>Advance through the ordered, non-overlapping BIO spans as window starts advance.</summary>
+    private static int FirstPossibleOverlap(IReadOnlyList<EntitySpan> prior, int index, int start)
+    {
+        while (index < prior.Count && prior[index].Start + prior[index].Length <= start)
+            index++;
+        return index;
     }
 
     /// <summary>Enumerate contiguous two-to-four-token windows, including hyphens and dotted initials.</summary>
@@ -159,69 +204,89 @@ public sealed class SpanPersonDetector
     private static int[] Features(string text, IReadOnlyList<PersonToken> words, int[] scripts,
         IReadOnlyList<EntitySpan> prior, int start, int last, int end)
     {
-        Span<int> ids = stackalloc int[2200];
-        Span<ulong> seen = stackalloc ulong[FeatureCount / 64];
-        seen.Clear();
-        var values = new FeatureSet(seen, ids);
-        Collect(ref values, text, words, scripts, prior, start, last, end);
-        return values.Sorted().ToArray();
+        Span<ulong> blocks = stackalloc ulong[FeatureCount / 64];
+        Span<ulong> occupiedBlocks = stackalloc ulong[FeatureCount / (64 * 64)];
+        Span<int> wordHashes = stackalloc int[MaximumWindowFeatures];
+        var values = new FeatureSet(blocks, occupiedBlocks);
+        for (int index = start; index <= last; index++)
+        {
+            int written = WriteWordAndGap(wordHashes, text, words, scripts, start, index);
+            foreach (int feature in wordHashes[..written])
+                values.Add(feature);
+        }
+        CollectContext(ref values, text, words, scripts, prior, 0, start, last, end);
+        return values.ToSortedArray();
     }
 
-    /// <summary>Collect each active feature once with a reusable bitset.</summary>
-    private static void Collect(ref FeatureSet values, string text, IReadOnlyList<PersonToken> words,
-        int[] scripts, IReadOnlyList<EntitySpan> prior, int start, int last, int end)
+    /// <summary>Collect the endpoint-specific features on top of the cached words and gaps.</summary>
+    private static void CollectContext(ref FeatureSet values, string text, IReadOnlyList<PersonToken> words,
+        int[] scripts, IReadOnlyList<EntitySpan> prior, int priorStart, int start, int last, int end)
     {
         Add(ref values, 1, "");
         Add(ref values, 2 + last - start, "");
         int begin = words[start].Start;
         bool exact = false, touches = false;
-        foreach (EntitySpan span in prior)
+        for (int index = priorStart; index < prior.Count; index++)
         {
+            EntitySpan span = prior[index];
+            if (span.Start >= end)
+                break;
             exact |= span.Start == begin && span.Start + span.Length == end;
             touches |= span.Start < end && span.Start + span.Length > begin;
         }
         Add(ref values, exact ? 10 : touches ? 11 : 12, "");
         if (text[end - 1] == '.')
             Add(ref values, 13, "");
-        for (int index = start; index <= last; index++)
-        {
-            int position = index - start;
-            var word = words[index];
-            AddWord(ref values, word, position, scripts[index]);
-            if (index < last)
-            {
-                ReadOnlySpan<char> gap = text.AsSpan(word.Start + word.Length,
-                    words[index + 1].Start - word.Start - word.Length);
-                if (gap.Contains('-') || gap.Contains('‑'))
-                    Add(ref values, 18 + position, "");
-            }
-        }
         AddNeighbor(ref values, words, scripts, start - 1, scripts[start], 500);
         AddNeighbor(ref values, words, scripts, start - 2, scripts[start], 510);
         AddNeighbor(ref values, words, scripts, last + 1, scripts[last], 520);
         AddNeighbor(ref values, words, scripts, last + 2, scripts[last], 530);
     }
 
-    /// <summary>Score spelling beyond suffixes, including prefixes and inner character groups.</summary>
-    private static void AddWord(ref FeatureSet output, PersonToken token, int position, int script)
+    /// <summary>Hash the word and preceding gap once for all endpoints containing them.</summary>
+    private static int WriteWordAndGap(Span<int> output, string text, IReadOnlyList<PersonToken> words, int[] scripts,
+        int start, int index)
+    {
+        int position = index - start;
+        PersonToken word = words[index];
+        int written = WriteWord(output, word, position, scripts[index]);
+        if (position == 0)
+            return written;
+        PersonToken previous = words[index - 1];
+        int gapStart = previous.Start + previous.Length;
+        ReadOnlySpan<char> gap = text.AsSpan(gapStart, word.Start - gapStart);
+        if (gap.Contains('-') || gap.Contains('‑'))
+            output[written++] = Hash(18 + position - 1, "");
+        return written;
+    }
+
+    /// <summary>Write role-specific spelling, affix, character group and shape hashes.</summary>
+    private static int WriteWord(Span<int> output, PersonToken token, int position, int script)
     {
         ReadOnlySpan<char> word = token.Lower.AsSpan();
         int feature = 40 + position * 100;
-        Add(ref output, feature, word);
-        Add(ref output, feature + 1 + Math.Min(17, word.Length), "");
-        Add(ref output, feature + 22 + script, "");
-        Add(ref output, feature + (char.IsUpper(token.Word[0]) ? 29 : 28), "");
+        int written = 0;
+        output[written++] = Hash(feature, word);
+        output[written++] = Hash(feature + 1 + Math.Min(17, word.Length), "");
+        output[written++] = Hash(feature + 22 + script, "");
+        output[written++] = Hash(feature + (char.IsUpper(token.Word[0]) ? 29 : 28), "");
         for (int length = 2; length <= Math.Min(word.Length, 5); length++)
         {
-            Add(ref output, feature + 35 + length, word[..length]);
-            Add(ref output, feature + 45 + length, word[^length..]);
+            output[written++] = Hash(feature + 35 + length, word[..length]);
+            output[written++] = Hash(feature + 45 + length, word[^length..]);
         }
         for (int index = 0; index + 3 <= word.Length; index++)
-            Add(ref output, feature + 56, word.Slice(index, 3));
+            output[written++] = Hash(feature + 56, word.Slice(index, 3));
         for (int index = 0; index + 2 <= word.Length; index++)
-            Add(ref output, 61, word.Slice(index, 2));
-        if (token.Word.Any(char.IsDigit))
-            Add(ref output, feature + 65, "");
+            output[written++] = Hash(61, word.Slice(index, 2));
+        foreach (char character in token.Word)
+        {
+            if (!char.IsDigit(character))
+                continue;
+            output[written++] = Hash(feature + 65, "");
+            break;
+        }
+        return written;
     }
 
     /// <summary>Encode adjacent words and observed script transitions in the decoded text.</summary>
@@ -252,55 +317,95 @@ public sealed class SpanPersonDetector
         return flags;
     }
 
+    /// <summary>Add a context feature using the same feature hashing as the cached words.</summary>
+    private static void Add(ref FeatureSet values, int feature, ReadOnlySpan<char> text) =>
+        values.Add(Hash(feature, text));
+
     /// <summary>Encode numeric feature identities and their text parts with stable hashing.</summary>
-    private static void Add(ref FeatureSet values, int feature, ReadOnlySpan<char> text)
+    private static int Hash(int feature, ReadOnlySpan<char> text)
     {
         uint hash = unchecked((2166136261u ^ (uint)feature) * 16777619u);
         foreach (char part in text)
             hash = unchecked((hash ^ part) * 16777619u);
         hash ^= hash >> 16;
-        values.Add((int)(hash & (FeatureCount - 1)));
+        return (int)(hash & (FeatureCount - 1));
     }
 
-    /// <summary>Keep sparse feature identities in caller-owned scratch memory.</summary>
+    /// <summary>Store sparse feature identities in bitmaps indexed by nonempty groups and blocks.</summary>
     private ref struct FeatureSet
     {
-        private readonly Span<ulong> seen;
-        private readonly Span<int> indices;
-        private int count;
+        private readonly Span<ulong> blocks;
+        private readonly Span<ulong> occupiedBlocks;
+        private ulong occupiedGroups;
 
-        public FeatureSet(Span<ulong> seen, Span<int> indices)
+        public FeatureSet(Span<ulong> blocks, Span<ulong> occupiedBlocks)
         {
-            this.seen = seen;
-            this.indices = indices;
-            count = 0;
+            this.blocks = blocks;
+            this.occupiedBlocks = occupiedBlocks;
+            occupiedGroups = 0;
+            blocks.Clear();
+            occupiedBlocks.Clear();
         }
 
         public void Add(int value)
         {
-            int slot = value >> 6;
-            ulong bit = 1UL << (value & 63);
-            if ((seen[slot] & bit) != 0)
-                return;
-            seen[slot] |= bit;
-            indices[count++] = value;
+            int block = value >> 6;
+            int group = block >> 6;
+            blocks[block] |= 1UL << (value & 63);
+            occupiedBlocks[group] |= 1UL << (block & 63);
+            occupiedGroups |= 1UL << group;
         }
 
-        public ReadOnlySpan<int> Sorted()
+        /// <summary>Add weights in the original ascending order and clear only occupied storage.</summary>
+        public float ScoreAndReset(ReadOnlySpan<float> weights)
         {
-            var used = indices[..count];
-            used.Sort();
-            return used;
-        }
-
-        public void Reset()
-        {
-            for (int i = 0; i < count; i++)
+            float result = 0;
+            while (occupiedGroups != 0)
             {
-                int value = indices[i];
-                seen[value >> 6] &= ~(1UL << (value & 63));
+                int group = RemoveFirst(ref occupiedGroups);
+                ulong remainingBlocks = occupiedBlocks[group];
+                occupiedBlocks[group] = 0;
+                while (remainingBlocks != 0)
+                {
+                    int block = (group << 6) + RemoveFirst(ref remainingBlocks);
+                    int start = block << 6;
+                    ulong remainingFeatures = blocks[block];
+                    blocks[block] = 0;
+                    while (remainingFeatures != 0)
+                        result += weights[start + RemoveFirst(ref remainingFeatures)];
+                }
             }
-            count = 0;
+            return result;
+        }
+
+        /// <summary>Materialize the same ordered feature identities for offline training.</summary>
+        public int[] ToSortedArray()
+        {
+            Span<int> result = stackalloc int[MaximumWindowFeatures];
+            int count = 0;
+            ulong remainingGroups = occupiedGroups;
+            while (remainingGroups != 0)
+            {
+                int group = RemoveFirst(ref remainingGroups);
+                ulong remainingBlocks = occupiedBlocks[group];
+                while (remainingBlocks != 0)
+                {
+                    int block = (group << 6) + RemoveFirst(ref remainingBlocks);
+                    int start = block << 6;
+                    ulong remainingFeatures = blocks[block];
+                    while (remainingFeatures != 0)
+                        result[count++] = start + RemoveFirst(ref remainingFeatures);
+                }
+            }
+            return result[..count].ToArray();
+        }
+
+        /// <summary>Remove the least significant active bit and return its zero-based index.</summary>
+        private static int RemoveFirst(ref ulong bits)
+        {
+            int index = BitOperations.TrailingZeroCount(bits);
+            bits &= bits - 1;
+            return index;
         }
     }
 

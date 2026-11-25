@@ -1,0 +1,561 @@
+{
+  "tag": "fi-fio-model-v1.0.0",
+  "checkpoint": "fit-7.5-1-group",
+  "model_sha256": "490583d0bb2731bb31c8ce2945b8b11c8c58742d662f8b2e99a114f27004ce38",
+  "model_bytes": 639176,
+  "workload": "synthetic stream-log Mixed, Russian and English",
+  "cohorts": {
+    "fresh": {
+      "manifest": {
+        "sha256": "8f352fb89cb73580aa88f63c697f056c9c99c835eaf1a60639fff8c13b3490f3",
+        "rows": 2400,
+        "positive_by_group": {
+          "ru_cyr": 300,
+          "ru_lat": 300,
+          "en_cyr": 300,
+          "en_lat": 300
+        }
+      },
+      "baseline": {
+        "totals": {
+          "positive": 1200,
+          "exact": 753,
+          "complete": 831,
+          "negative": 1200,
+          "false_mask": 361,
+          "collateral": 103
+        },
+        "groups": {
+          "ru_cyr": {
+            "positive": 300,
+            "exact": 152,
+            "complete": 152,
+            "partial": 5,
+            "miss": 143,
+            "collateral": 5,
+            "exact_model": 152,
+            "nearby_candidate": 157,
+            "oracle_insertable": 0,
+            "candidate_gap": 143,
+            "negative": 300,
+            "false_mask": 0,
+            "neighbor_candidate": 5
+          },
+          "ru_lat": {
+            "positive": 300,
+            "exact": 223,
+            "complete": 238,
+            "partial": 24,
+            "miss": 38,
+            "collateral": 20,
+            "exact_model": 222,
+            "nearby_candidate": 224,
+            "oracle_insertable": 0,
+            "negative": 300,
+            "false_mask": 155,
+            "merge_or_commit": 14,
+            "candidate_gap": 61,
+            "neighbor_candidate": 2
+          },
+          "en_cyr": {
+            "positive": 300,
+            "exact": 174,
+            "complete": 204,
+            "partial": 0,
+            "miss": 96,
+            "collateral": 39,
+            "exact_model": 182,
+            "nearby_candidate": 182,
+            "oracle_insertable": 0,
+            "candidate_gap": 96,
+            "negative": 300,
+            "false_mask": 39,
+            "merge_or_commit": 30
+          },
+          "en_lat": {
+            "positive": 300,
+            "exact": 204,
+            "complete": 237,
+            "partial": 26,
+            "miss": 37,
+            "collateral": 39,
+            "exact_model": 175,
+            "nearby_candidate": 176,
+            "oracle_insertable": 0,
+            "candidate_gap": 68,
+            "negative": 300,
+            "false_mask": 167,
+            "merge_or_commit": 28
+          }
+        },
+        "invalid": 0,
+        "ru_cyr_two_word": {
+          "rows": 275,
+          "complete": 142,
+          "exact": 142
+        }
+      },
+      "compact_guard": {
+        "totals": {
+          "positive": 1200,
+          "exact": 753,
+          "complete": 831,
+          "negative": 1200,
+          "false_mask": 241,
+          "collateral": 103
+        },
+        "groups": {
+          "ru_cyr": {
+            "positive": 300,
+            "exact": 152,
+            "complete": 152,
+            "partial": 5,
+            "miss": 143,
+            "collateral": 5,
+            "exact_model": 152,
+            "nearby_candidate": 157,
+            "oracle_insertable": 0,
+            "candidate_gap": 143,
+            "negative": 300,
+            "false_mask": 0,
+            "neighbor_candidate": 5
+          },
+          "ru_lat": {
+            "positive": 300,
+            "exact": 223,
+            "complete": 238,
+            "partial": 24,
+            "miss": 38,
+            "collateral": 20,
+            "exact_model": 222,
+            "nearby_candidate": 224,
+            "oracle_insertable": 0,
+            "negative": 300,
+            "false_mask": 91,
+            "merge_or_commit": 14,
+            "candidate_gap": 61,
+            "neighbor_candidate": 2
+          },
+          "en_cyr": {
+            "positive": 300,
+            "exact": 174,
+            "complete": 204,
+            "partial": 0,
+            "miss": 96,
+            "collateral": 39,
+            "exact_model": 182,
+            "nearby_candidate": 182,
+            "oracle_insertable": 0,
+            "candidate_gap": 96,
+            "negative": 300,
+            "false_mask": 39,
+            "merge_or_commit": 30
+          },
+          "en_lat": {
+            "positive": 300,
+            "exact": 204,
+            "complete": 237,
+            "partial": 26,
+            "miss": 37,
+            "collateral": 39,
+            "exact_model": 175,
+            "nearby_candidate": 176,
+            "oracle_insertable": 0,
+            "candidate_gap": 68,
+            "negative": 300,
+            "false_mask": 111,
+            "merge_or_commit": 28
+          }
+        },
+        "invalid": 0,
+        "ru_cyr_two_word": {
+          "rows": 275,
+          "complete": 142,
+          "exact": 142
+        }
+      },
+      "candidate": {
+        "totals": {
+          "positive": 1200,
+          "exact": 1074,
+          "complete": 1172,
+          "negative": 1200,
+          "false_mask": 241,
+          "collateral": 100
+        },
+        "groups": {
+          "ru_cyr": {
+            "positive": 300,
+            "exact": 289,
+            "complete": 289,
+            "partial": 2,
+            "miss": 9,
+            "collateral": 2,
+            "exact_model": 289,
+            "nearby_candidate": 291,
+            "oracle_insertable": 0,
+            "negative": 300,
+            "false_mask": 0,
+            "candidate_gap": 9,
+            "neighbor_candidate": 2
+          },
+          "ru_lat": {
+            "positive": 300,
+            "exact": 278,
+            "complete": 298,
+            "partial": 1,
+            "miss": 1,
+            "collateral": 20,
+            "exact_model": 298,
+            "nearby_candidate": 298,
+            "oracle_insertable": 0,
+            "negative": 300,
+            "false_mask": 91,
+            "merge_or_commit": 20,
+            "candidate_gap": 2
+          },
+          "en_cyr": {
+            "positive": 300,
+            "exact": 250,
+            "complete": 289,
+            "partial": 0,
+            "miss": 11,
+            "collateral": 39,
+            "exact_model": 285,
+            "nearby_candidate": 285,
+            "oracle_insertable": 0,
+            "negative": 300,
+            "false_mask": 39,
+            "merge_or_commit": 39,
+            "candidate_gap": 11
+          },
+          "en_lat": {
+            "positive": 300,
+            "exact": 257,
+            "complete": 296,
+            "partial": 2,
+            "miss": 2,
+            "collateral": 39,
+            "exact_model": 294,
+            "nearby_candidate": 294,
+            "oracle_insertable": 0,
+            "negative": 300,
+            "false_mask": 111,
+            "merge_or_commit": 39,
+            "candidate_gap": 4
+          }
+        },
+        "invalid": 0,
+        "ru_cyr_two_word": {
+          "rows": 275,
+          "complete": 265,
+          "exact": 265
+        }
+      },
+      "paired": {
+        "counts": {
+          "gained_exact": 321,
+          "gained_complete": 341,
+          "lost_miss": 291,
+          "lost_collateral": 3,
+          "lost_partial": 50,
+          "lost_false_mask": 120
+        },
+        "exact_delta": 321,
+        "complete_delta": 341,
+        "invalid": 0
+      }
+    },
+    "regression": {
+      "manifest": {
+        "sha256": "973c101c42343cf8df2eee2dff9c50d9b1175c20562f6431ed0a73504813e65a",
+        "rows": 4000,
+        "positive_by_group": {
+          "ru_cyr": 500,
+          "ru_lat": 500,
+          "en_cyr": 500,
+          "en_lat": 500
+        }
+      },
+      "baseline": {
+        "totals": {
+          "positive": 2000,
+          "exact": 1618,
+          "complete": 1683,
+          "negative": 2000,
+          "false_mask": 73,
+          "collateral": 76
+        },
+        "groups": {
+          "ru_cyr": {
+            "positive": 500,
+            "exact": 365,
+            "complete": 365,
+            "partial": 0,
+            "miss": 135,
+            "collateral": 0,
+            "exact_model": 351,
+            "nearby_candidate": 351,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 0,
+            "candidate_gap": 135
+          },
+          "ru_lat": {
+            "positive": 500,
+            "exact": 418,
+            "complete": 432,
+            "partial": 11,
+            "miss": 57,
+            "collateral": 14,
+            "exact_model": 427,
+            "nearby_candidate": 427,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 8,
+            "merge_or_commit": 13,
+            "candidate_gap": 69
+          },
+          "en_cyr": {
+            "positive": 500,
+            "exact": 427,
+            "complete": 454,
+            "partial": 0,
+            "miss": 46,
+            "collateral": 31,
+            "exact_model": 449,
+            "nearby_candidate": 449,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 31,
+            "candidate_gap": 48,
+            "merge_or_commit": 25
+          },
+          "en_lat": {
+            "positive": 500,
+            "exact": 408,
+            "complete": 432,
+            "partial": 4,
+            "miss": 64,
+            "collateral": 31,
+            "exact_model": 410,
+            "nearby_candidate": 411,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 34,
+            "candidate_gap": 69,
+            "merge_or_commit": 22,
+            "neighbor_candidate": 1
+          }
+        },
+        "invalid": 0,
+        "ru_cyr_two_word": {
+          "rows": 250,
+          "complete": 155,
+          "exact": 155
+        }
+      },
+      "compact_guard": {
+        "totals": {
+          "positive": 2000,
+          "exact": 1618,
+          "complete": 1683,
+          "negative": 2000,
+          "false_mask": 73,
+          "collateral": 76
+        },
+        "groups": {
+          "ru_cyr": {
+            "positive": 500,
+            "exact": 365,
+            "complete": 365,
+            "partial": 0,
+            "miss": 135,
+            "collateral": 0,
+            "exact_model": 351,
+            "nearby_candidate": 351,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 0,
+            "candidate_gap": 135
+          },
+          "ru_lat": {
+            "positive": 500,
+            "exact": 418,
+            "complete": 432,
+            "partial": 11,
+            "miss": 57,
+            "collateral": 14,
+            "exact_model": 427,
+            "nearby_candidate": 427,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 8,
+            "merge_or_commit": 13,
+            "candidate_gap": 69
+          },
+          "en_cyr": {
+            "positive": 500,
+            "exact": 427,
+            "complete": 454,
+            "partial": 0,
+            "miss": 46,
+            "collateral": 31,
+            "exact_model": 449,
+            "nearby_candidate": 449,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 31,
+            "candidate_gap": 48,
+            "merge_or_commit": 25
+          },
+          "en_lat": {
+            "positive": 500,
+            "exact": 408,
+            "complete": 432,
+            "partial": 4,
+            "miss": 64,
+            "collateral": 31,
+            "exact_model": 410,
+            "nearby_candidate": 411,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 34,
+            "candidate_gap": 69,
+            "merge_or_commit": 22,
+            "neighbor_candidate": 1
+          }
+        },
+        "invalid": 0,
+        "ru_cyr_two_word": {
+          "rows": 250,
+          "complete": 155,
+          "exact": 155
+        }
+      },
+      "candidate": {
+        "totals": {
+          "positive": 2000,
+          "exact": 1812,
+          "complete": 1888,
+          "negative": 2000,
+          "false_mask": 83,
+          "collateral": 76
+        },
+        "groups": {
+          "ru_cyr": {
+            "positive": 500,
+            "exact": 453,
+            "complete": 453,
+            "partial": 4,
+            "miss": 43,
+            "collateral": 0,
+            "exact_model": 447,
+            "nearby_candidate": 450,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 6,
+            "candidate_gap": 44,
+            "neighbor_candidate": 3
+          },
+          "ru_lat": {
+            "positive": 500,
+            "exact": 453,
+            "complete": 467,
+            "partial": 3,
+            "miss": 30,
+            "collateral": 14,
+            "exact_model": 464,
+            "nearby_candidate": 464,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 11,
+            "merge_or_commit": 14,
+            "candidate_gap": 33
+          },
+          "en_cyr": {
+            "positive": 500,
+            "exact": 451,
+            "complete": 482,
+            "partial": 2,
+            "miss": 16,
+            "collateral": 31,
+            "exact_model": 479,
+            "nearby_candidate": 479,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 32,
+            "merge_or_commit": 30,
+            "candidate_gap": 19
+          },
+          "en_lat": {
+            "positive": 500,
+            "exact": 455,
+            "complete": 486,
+            "partial": 2,
+            "miss": 12,
+            "collateral": 31,
+            "exact_model": 481,
+            "nearby_candidate": 483,
+            "oracle_insertable": 0,
+            "negative": 500,
+            "false_mask": 34,
+            "merge_or_commit": 30,
+            "neighbor_candidate": 2,
+            "candidate_gap": 13
+          }
+        },
+        "invalid": 0,
+        "ru_cyr_two_word": {
+          "rows": 250,
+          "complete": 218,
+          "exact": 218
+        }
+      },
+      "paired": {
+        "counts": {
+          "gained_exact": 208,
+          "gained_complete": 219,
+          "lost_miss": 210,
+          "gained_false_mask": 10,
+          "new_negative_mask_characters": 10,
+          "lost_exact": 14,
+          "lost_complete": 14,
+          "gained_miss": 9,
+          "gained_partial": 8,
+          "lost_partial": 12
+        },
+        "exact_delta": 194,
+        "complete_delta": 205,
+        "invalid": 0
+      }
+    }
+  },
+  "compact_control": {
+    "before": {
+      "positive": 960,
+      "exact": 170,
+      "complete": 170,
+      "negative": 960,
+      "false_mask": 8,
+      "collateral": 0
+    },
+    "after": {
+      "positive": 960,
+      "exact": 170,
+      "complete": 170,
+      "negative": 960,
+      "false_mask": 0,
+      "collateral": 0
+    },
+    "positive_stdout_parity": true,
+    "contrasts": {
+      "positive": 9,
+      "exact": 9,
+      "complete": 9,
+      "negative": 6,
+      "false_mask": 0,
+      "collateral": 0
+    }
+  }
+}
