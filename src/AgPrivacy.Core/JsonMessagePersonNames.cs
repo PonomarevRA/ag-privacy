@@ -25,6 +25,15 @@ internal static class JsonMessagePersonNames
         }
 
         var decodedSpans = FindDecodedSpans(decoded, exceptions, model, proseModel);
+        if (decoded.Contains('@'))
+        {
+            // A raw match can begin at the letter inside a JSON escape such as \n.
+            // Rerun the email pattern on characters, then project its actual boundaries below.
+            int end = start + length;
+            spans.RemoveAll(span => span.Type == "EMAIL" && span.Priority == RegexDetector.MatchPriority
+                && span.Start >= start && span.Start + span.Length <= end);
+            decodedSpans.AddRange(RegexDetector.Find(decoded, "EMAIL"));
+        }
         if (decodedSpans.Count == 0) return;
 
         int[] offsets = BuildOffsetMap(raw, decoded.Length);

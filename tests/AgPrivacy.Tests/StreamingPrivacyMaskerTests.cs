@@ -6,6 +6,37 @@ namespace AgPrivacy.Tests;
 
 public sealed class StreamingPrivacyMaskerTests
 {
+    /// <summary>Preserve an escaped control character immediately before a masked email.</summary>
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r")]
+    [InlineData("\t")]
+    public async Task KeepsJsonControlEscapeBeforeEmail(string separator)
+    {
+        const string address = "synthetic-mailbox@privacy.example";
+        const string trace = "synthetic-email-fixture";
+        string row = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["trace.id"] = trace,
+            ["message"] = "start" + separator + address + "; status=ok"
+        });
+        using var input = new ShortReads(Encoding.UTF8.GetBytes(row + "\n"));
+        using var output = new MemoryStream();
+        using var aliases = new Pseudonymizer(new byte[32], "stream-escape-test");
+        var policy = PrivacyPolicy.Compile("""{"schemaVersion":"ag-privacy-policy-v1"}"""u8);
+        var masker = new StreamingPrivacyMasker(policy, aliases, null, null, null, null,
+            null, LogAnalysisMode.Mixed, null);
+        var result = await masker.MaskAsync(input, output);
+
+        using var record = JsonDocument.Parse(output.ToArray());
+        Assert.Equal(trace, record.RootElement.GetProperty("trace.id").GetString());
+        string message = record.RootElement.GetProperty("message").GetString()!;
+        Assert.StartsWith("start" + separator, message);
+        Assert.EndsWith("; status=ok", message);
+        Assert.DoesNotContain(address, message);
+        Assert.Equal(0, result.ConservativeMasks);
+    }
+
     /// <summary>Preserve both name parts at a window seam, reapply the mask to an unlabelled repeat, and dedupe the journal.</summary>
     [Fact]
     public async Task MasksAcrossWindowAndReusesNameOnLaterLine()

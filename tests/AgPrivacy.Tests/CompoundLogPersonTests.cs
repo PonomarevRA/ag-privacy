@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Xunit;
 
@@ -57,5 +58,29 @@ public sealed class CompoundLogPersonTests
         var stream = new StreamingPrivacyMasker(policy, aliases);
         await stream.MaskAsync(input, output);
         Assert.True(source == Encoding.UTF8.GetString(output.ToArray()));
+    }
+
+    /// <summary>Keep the speaker label outside the mask after decoding a JSON message.</summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task KeepsSpeakerLabelOutsidePersonMask(bool escapeUnicode)
+    {
+        using var aliases = new Pseudonymizer(new byte[32], "speaker-fixture");
+        var policy = PrivacyPolicy.Compile("""{"schemaVersion":"ag-privacy-policy-v1"}"""u8);
+        const string prefix = "Докладчик — ";
+        const string name = "Нина Львовна Бурундина";
+        var options = new JsonSerializerOptions
+        {
+            Encoder = escapeUnicode ? JavaScriptEncoder.Default : JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+        string source = JsonSerializer.Serialize(new { message = prefix + name }, options) + "\n";
+        using var input = new MemoryStream(Encoding.UTF8.GetBytes(source));
+        using var output = new MemoryStream();
+        await new StreamingPrivacyMasker(policy, aliases).MaskAsync(input, output);
+        using var doc = JsonDocument.Parse(output.ToArray());
+        string message = doc.RootElement.GetProperty("message").GetString()!;
+        Assert.StartsWith(prefix, message);
+        Assert.DoesNotContain("Нина Львовна", message);
     }
 }

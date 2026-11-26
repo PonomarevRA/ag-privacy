@@ -6,6 +6,8 @@ namespace AgPrivacy;
 /// <summary>Source-generated regex проверяют полную неделимую строку; таймаут никогда не разрешает raw fallback.</summary>
 public static class RegexDetector
 {
+    internal const int MatchPriority = 100;
+
     /// <summary>Check for a compiled pattern of one type without collecting all matching spans.</summary>
     internal static bool HasMatch(string text, string type, bool wholeValue = false)
     {
@@ -37,7 +39,7 @@ public static class RegexDetector
             foreach (Match match in rule.Pattern.Matches(text))
             {
                 if (watch.ElapsedMilliseconds > 250 || spans.Count >= PrivacyLimits.Entities) throw new InvalidOperationException("analysis-limit");
-                if (match.Length > 0) spans.Add(new(match.Index, match.Length, rule.Type, 100));
+                if (match.Length > 0) spans.Add(new(match.Index, match.Length, rule.Type, MatchPriority));
             }
             if (watch.ElapsedMilliseconds > 250) throw new InvalidOperationException("analysis-limit");
         }

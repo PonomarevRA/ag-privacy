@@ -8,6 +8,10 @@ internal static partial class ComplexLogPersonNames
 {
     [Flags]
     private enum Role { None = 0, Given = 1, Surname = 2, Patronymic = 4 }
+    private static readonly FrozenSet<string> SpeakerLabels = new[]
+    {
+        "докладчик", "выступающий", "модератор", "speaker", "presenter", "moderator"
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Add full name spans inside the given source range, including separators between name parts.</summary>
     internal static void Add(string text, int start, int length, List<EntitySpan> spans)
@@ -35,8 +39,19 @@ internal static partial class ComplexLogPersonNames
             // Ordinary Cyrillic names still use the existing contextual rule.
             if (!explicitSeparator && !HasLatin(text.AsSpan(first.Index, nameEnd - first.Index))) continue;
             end = nameEnd;
-            spans.Add(new(first.Index, end - first.Index, "PERSON", 50));
+            int nameStart = StartsWithSpeakerLabel(first, match.Groups["separator"]) ? second.Index : first.Index;
+            spans.Add(new(nameStart, end - nameStart, "PERSON", 50));
         }
+    }
+
+    /// <summary>Keep a speaker label outside the value when punctuation marks the boundary.</summary>
+    private static bool StartsWithSpeakerLabel(Group word, Group separator)
+    {
+        ReadOnlySpan<char> gap = separator.ValueSpan;
+        // An unspaced ASCII hyphen can belong to a compound surname.
+        return gap.ContainsAny('-', '–', '—')
+            && (gap.Length != 1 || gap[0] != '-')
+            && SpeakerLabels.Contains(word.Value);
     }
 
     /// <summary>Accept given name and surname in either order.</summary>

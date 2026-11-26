@@ -1,6 +1,6 @@
 # ag-privacy
 
-[Русский](README.ru.md) · [English](README.en.md) · [Экспериментальная модель ФИ и ФИО](docs/recall337-preview.ru.md) · [Модель ФИ и ФИО v1.0.0](docs/fi-fio-model-v1.ru.md)
+[Русский](README.ru.md) · [English](README.en.md) · [Экспериментальная модель ФИ и ФИО](docs/recall337-preview.ru.md) · [Модель ФИ и ФИО v1.0.0](docs/fi-fio-model-v1.ru.md) · [ФИО в нижнем регистре · preview](docs/fio-lowercase-preview.ru.md)
 
 Локальная библиотека .NET 10 для маскирования чувствительных данных перед просмотром логов, обработкой файлов и передачей результата в другие системы. Обрабатывает JSON, сообщения внутри JSON, CSV, TSV и XML. Работает через .NET API, потоковый CLI и локальный UI.
 

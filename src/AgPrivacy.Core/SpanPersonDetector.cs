@@ -68,7 +68,7 @@ public sealed class SpanPersonDetector
     internal IReadOnlyList<EntitySpan> Find(string text, PilotSpanSelection? selection)
     {
         int wholeBalance = selection is null ? 0 : PilotSpanSelection.AlphabetBalance(text);
-        var accepted = new List<((int Start, int End) Span, float Value)>();
+        var accepted = new List<ScoredWindow>();
         var tokens = MicroPersonModel.Tokenize(text);
         var previous = parent.Find(text);
         var scripts = ReadAlphabets(tokens);
@@ -99,32 +99,43 @@ public sealed class SpanPersonDetector
                 features.Add(feature);
             CollectContext(ref features, text, tokens, scripts, previous, priorStart, first, last, end);
             float value = features.ScoreAndReset(weights);
+            float baseScore = value;
             bool keep = selection is null ? value >= threshold :
                 selection.Accept(text, tokens, first, last, end, wholeBalance, value, out value);
             if (keep)
-                accepted.Add(((tokens[first].Start, end), value));
+                accepted.Add(new(tokens[first].Start, end, first, last, value, baseScore));
         }
         accepted.Sort((left, right) =>
         {
             int byScore = right.Value.CompareTo(left.Value);
-            return byScore == 0 ? left.Span.Start.CompareTo(right.Span.Start) : byScore;
+            return byScore == 0 ? left.Start.CompareTo(right.Start) : byScore;
         });
-        var result = new List<EntitySpan>();
-        foreach (var (window, _) in accepted)
+        var winners = new List<ScoredWindow>();
+        foreach (ScoredWindow window in accepted)
         {
-            if (!Overlaps(result, window.Start, window.End))
+            if (!Overlaps(winners, window.Start, window.End))
+                winners.Add(window);
+        }
+        winners.Sort((left, right) => left.Start.CompareTo(right.Start));
+        var result = new List<EntitySpan>(winners.Count);
+        foreach (ScoredWindow window in winners)
+        {
+            // A removed winner never opens an overlap to another candidate.
+            if (selection?.Suppress(text, tokens, window.First, window.Last, window.End, window.BaseScore) != true)
                 result.Add(new EntitySpan(window.Start, window.End - window.Start, "PERSON"));
         }
-        result.Sort((left, right) => left.Start.CompareTo(right.Start));
         return result;
     }
 
+    private readonly record struct ScoredWindow(int Start, int End, int First, int Last,
+        float Value, float BaseScore);
+
     /// <summary>Check whether a higher-scoring interval already occupies any of this window.</summary>
-    private static bool Overlaps(List<EntitySpan> spans, int start, int end)
+    private static bool Overlaps(List<ScoredWindow> spans, int start, int end)
     {
-        foreach (EntitySpan span in spans)
+        foreach (ScoredWindow span in spans)
         {
-            if (span.Start < end && span.Start + span.Length > start)
+            if (span.Start < end && span.End > start)
                 return true;
         }
         return false;
