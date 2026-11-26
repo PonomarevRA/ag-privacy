@@ -1,387 +1,297 @@
 {
-  "experiment": 56,
-  "model_sha256": "6cfa72f1bf353e00ca1e934deb44d68e9d7890966377a6fc9c755626a129b5d8",
-  "synthetic_folds": {
-    "fit": {
-      "rows": 3936,
-      "sha256": "277f884d439a909d1e66d70ed5c8283d9eef778de820e0e637c584bbba3860cd",
-      "pair_order": {
-        "surname-first": 1632,
-        "surname-last": 336
+  "experiment": 60,
+  "artifact_sha256": "ecb1a5f65478a0ed5b49e31fb7b456848a47e4282a561b91a264f8dd68cd7b97",
+  "benchmark_summary_sha256": "286c77db370bee4c0e80104cebb2ada70985fe1e00c76315e8be867f5d186fe2",
+  "reference": "MLflow experiment 59",
+  "fresh_external": {
+    "source": "https://huggingface.co/datasets/Powpowpow23/ru-pii-ner-data/blob/55acbec07fb04a18455111a34337cb515a7f821e/data/train.parquet",
+    "source_sha256": "c11eb34f60a2fb6dbf43fe2ba38f9af6e9d7eee0e73f8c63cdf622e882c8d16e",
+    "seed": 202611256102,
+    "counts": {
+      "negative": 400,
+      "positive": 320
+    },
+    "lowered": 206
+  },
+  "metrics": {
+    "sha256": "ecb1a5f65478a0ed5b49e31fb7b456848a47e4282a561b91a264f8dd68cd7b97",
+    "audit": {
+      "removed_12": 12,
+      "previous_quote_passed": true
+    },
+    "vs_current58": {
+      "fresh_external_retry": {
+        "counts": {
+          "fio": 268,
+          "gold": 320,
+          "exact": 258,
+          "false": 55,
+          "invalid": 0
+        },
+        "paired": {
+          "new_false": 0,
+          "removed_false": 0,
+          "gained_complete": 11,
+          "lost_complete": 0,
+          "gained_target_complete": 11,
+          "lost_target_complete": 0,
+          "gained_exact": 11,
+          "lost_exact": 0,
+          "gained_target_exact": 11,
+          "lost_target_exact": 0
+        },
+        "added_person_spans": 11,
+        "removed_person_spans": 0,
+        "added_other_spans": 0,
+        "removed_other_spans": 0,
+        "new_extra_person": 0,
+        "removed_extra_person": 0
+      },
+      "fresh_synthetic": {
+        "counts": {
+          "fio": 679,
+          "gold": 768,
+          "exact": 679,
+          "false": 71,
+          "invalid": 0
+        },
+        "paired": {
+          "gained_complete": 49,
+          "lost_complete": 5,
+          "gained_target_complete": 49,
+          "lost_target_complete": 5,
+          "gained_exact": 49,
+          "lost_exact": 5,
+          "gained_target_exact": 49,
+          "lost_target_exact": 5,
+          "new_false": 0,
+          "removed_false": 1
+        },
+        "added_person_spans": 49,
+        "removed_person_spans": 6,
+        "added_other_spans": 0,
+        "removed_other_spans": 0,
+        "new_extra_person": 0,
+        "removed_extra_person": 1
+      },
+      "scanpatch": {
+        "counts": {
+          "fio": 1107,
+          "gold": 1298,
+          "exact": 1015,
+          "false": 130,
+          "invalid": 0
+        },
+        "paired": {
+          "new_false": 0,
+          "removed_false": 0,
+          "gained_complete": 0,
+          "lost_complete": 0,
+          "gained_target_complete": 0,
+          "lost_target_complete": 0,
+          "gained_exact": 0,
+          "lost_exact": 0,
+          "gained_target_exact": 0,
+          "lost_target_exact": 0
+        },
+        "added_person_spans": 1,
+        "removed_person_spans": 0,
+        "added_other_spans": 0,
+        "removed_other_spans": 0,
+        "new_extra_person": 1,
+        "removed_extra_person": 0
+      },
+      "historical": {
+        "counts": {
+          "fio": 582,
+          "gold": 640,
+          "exact": 563,
+          "false": 470,
+          "invalid": 0
+        },
+        "paired": {
+          "gained_complete": 32,
+          "lost_complete": 3,
+          "gained_target_complete": 32,
+          "lost_target_complete": 3,
+          "gained_exact": 32,
+          "lost_exact": 3,
+          "gained_target_exact": 32,
+          "lost_target_exact": 3,
+          "new_false": 0,
+          "removed_false": 4
+        },
+        "added_person_spans": 32,
+        "removed_person_spans": 7,
+        "added_other_spans": 0,
+        "removed_other_spans": 0,
+        "new_extra_person": 0,
+        "removed_extra_person": 4
+      },
+      "external59": {
+        "counts": {
+          "fio": 590,
+          "gold": 700,
+          "exact": 546,
+          "false": 120,
+          "invalid": 0
+        },
+        "paired": {
+          "new_false": 0,
+          "removed_false": 0,
+          "gained_complete": 24,
+          "lost_complete": 0,
+          "gained_target_complete": 24,
+          "lost_target_complete": 0,
+          "gained_exact": 23,
+          "lost_exact": 0,
+          "gained_target_exact": 23,
+          "lost_target_exact": 0
+        },
+        "added_person_spans": 24,
+        "removed_person_spans": 1,
+        "added_other_spans": 0,
+        "removed_other_spans": 0,
+        "new_extra_person": 0,
+        "removed_extra_person": 0
       }
     },
-    "dev": {
-      "rows": 896,
-      "sha256": "a0c64c57c68a90ab1afefa395e1d8dc9df1cffd9e2b13aa4770732b4c9a26223",
-      "pair_order": {
-        "surname-last": 90,
-        "surname-first": 358
-      }
-    },
-    "fresh": {
-      "rows": 2596,
-      "sha256": "12cc3cd72f533352a97c33e0921a0ebeb6e942c4e54326499f62b951c3f39284",
-      "pair_order": {
-        "surname-last": 260,
-        "surname-first": 1038
+    "vs_current59": {
+      "fresh_external_retry": {
+        "counts": {
+          "fio": 268,
+          "gold": 320,
+          "exact": 258,
+          "false": 55,
+          "invalid": 0
+        },
+        "paired": {
+          "new_false": 0,
+          "removed_false": 0,
+          "gained_complete": 3,
+          "lost_complete": 2,
+          "gained_target_complete": 3,
+          "lost_target_complete": 2,
+          "gained_exact": 3,
+          "lost_exact": 2,
+          "gained_target_exact": 3,
+          "lost_target_exact": 2
+        },
+        "added_person_spans": 3,
+        "removed_person_spans": 2,
+        "added_other_spans": 0,
+        "removed_other_spans": 0,
+        "new_extra_person": 0,
+        "removed_extra_person": 0
+      },
+      "fresh_synthetic": {
+        "counts": {
+          "fio": 679,
+          "gold": 768,
+          "exact": 679,
+          "false": 71,
+          "invalid": 0
+        },
+        "paired": {
+          "gained_complete": 18,
+          "lost_complete": 3,
+          "gained_target_complete": 18,
+          "lost_target_complete": 3,
+          "gained_exact": 18,
+          "lost_exact": 3,
+          "gained_target_exact": 18,
+          "lost_target_exact": 3,
+          "new_false": 0,
+          "removed_false": 0
+        },
+        "added_person_spans": 18,
+        "removed_person_spans": 3,
+        "added_other_spans": 0,
+        "removed_other_spans": 0,
+        "new_extra_person": 0,
+        "removed_extra_person": 0
+      },
+      "scanpatch": {
+        "counts": {
+          "fio": 1107,
+          "gold": 1298,
+          "exact": 1015,
+          "false": 130,
+          "invalid": 0
+        },
+        "paired": {
+          "new_false": 0,
+          "removed_false": 0,
+          "gained_complete": 0,
+          "lost_complete": 0,
+          "gained_target_complete": 0,
+          "lost_target_complete": 0,
+          "gained_exact": 0,
+          "lost_exact": 0,
+          "gained_target_exact": 0,
+          "lost_target_exact": 0
+        },
+        "added_person_spans": 1,
+        "removed_person_spans": 0,
+        "added_other_spans": 0,
+        "removed_other_spans": 0,
+        "new_extra_person": 1,
+        "removed_extra_person": 0
+      },
+      "historical": {
+        "counts": {
+          "fio": 582,
+          "gold": 640,
+          "exact": 563,
+          "false": 470,
+          "invalid": 0
+        },
+        "paired": {
+          "gained_complete": 18,
+          "lost_complete": 4,
+          "gained_target_complete": 18,
+          "lost_target_complete": 4,
+          "gained_exact": 18,
+          "lost_exact": 4,
+          "gained_target_exact": 18,
+          "lost_target_exact": 4,
+          "new_false": 0,
+          "removed_false": 13
+        },
+        "added_person_spans": 18,
+        "removed_person_spans": 17,
+        "added_other_spans": 0,
+        "removed_other_spans": 0,
+        "new_extra_person": 0,
+        "removed_extra_person": 13
+      },
+      "external59": {
+        "counts": {
+          "fio": 590,
+          "gold": 700,
+          "exact": 546,
+          "false": 120,
+          "invalid": 0
+        },
+        "paired": {
+          "new_false": 0,
+          "removed_false": 0,
+          "gained_complete": 8,
+          "lost_complete": 3,
+          "gained_target_complete": 8,
+          "lost_target_complete": 3,
+          "gained_exact": 7,
+          "lost_exact": 3,
+          "gained_target_exact": 7,
+          "lost_target_exact": 3
+        },
+        "added_person_spans": 8,
+        "removed_person_spans": 4,
+        "added_other_spans": 0,
+        "removed_other_spans": 0,
+        "new_extra_person": 0,
+        "removed_extra_person": 0
       }
     }
-  },
-  "external": {
-    "dataset": "https://huggingface.co/datasets/Powpowpow23/ru-pii-ner-data/tree/55acbec07fb04a18455111a34337cb515a7f821e",
-    "file_sha256": "f0214bc318d4bd38808671f4a95a95acabea118cc846334dd29a8f753a9d8cd2",
-    "seed": 202611255601,
-    "positive": 636,
-    "negative": 1298,
-    "origin_file_rows": 11298,
-    "lowered_name_spans": 415
-  },
-  "scanpatch": {
-    "repo": "scanpatch/pii-ner-corpus-synthetic-controlled",
-    "revision": "6af0587dde068d90d8a1080285159c374b46a09b",
-    "file": "data/train-00000-of-00001.parquet",
-    "sha256": "8e742bf0d39d4db7f2eb1f6c6b6cf9480536769ab31bcfbc6cd986fd1a3be37e"
-  },
-  "profiles": {
-    "recall54": {
-      "restored_out_of_66": 66,
-      "cohorts": {
-        "scanpatch": {
-          "counts": {
-            "fio": 1107,
-            "gold": 1298,
-            "exact": 1015,
-            "false": 308,
-            "invalid": 0
-          },
-          "paired": {
-            "new_false": 178,
-            "removed_false": 0,
-            "gained_complete": 0,
-            "lost_complete": 0,
-            "gained_target_complete": 0,
-            "lost_target_complete": 0,
-            "gained_exact": 0,
-            "lost_exact": 0,
-            "gained_target_exact": 0,
-            "lost_target_exact": 0
-          },
-          "added_person_spans": 497,
-          "removed_person_spans": 0,
-          "added_other_spans": 2,
-          "removed_other_spans": 2,
-          "new_extra_person": 497,
-          "removed_extra_person": 0
-        },
-        "diagnostic_66": {
-          "counts": {
-            "fio": 1283,
-            "gold": 1298,
-            "exact": 1283,
-            "false": 128,
-            "invalid": 0
-          },
-          "paired": {
-            "gained_complete": 66,
-            "lost_complete": 0,
-            "gained_target_complete": 66,
-            "lost_target_complete": 0,
-            "gained_exact": 66,
-            "lost_exact": 0,
-            "gained_target_exact": 66,
-            "lost_target_exact": 0,
-            "new_false": 13,
-            "removed_false": 0
-          },
-          "added_person_spans": 79,
-          "removed_person_spans": 0,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 13,
-          "removed_extra_person": 0
-        },
-        "fresh_synthetic": {
-          "counts": {
-            "fio": 1230,
-            "gold": 1298,
-            "exact": 1195,
-            "false": 24,
-            "invalid": 0
-          },
-          "paired": {
-            "gained_complete": 195,
-            "lost_complete": 0,
-            "gained_target_complete": 195,
-            "lost_target_complete": 0,
-            "gained_exact": 195,
-            "lost_exact": 0,
-            "gained_target_exact": 195,
-            "lost_target_exact": 0,
-            "new_false": 21,
-            "removed_false": 0
-          },
-          "added_person_spans": 231,
-          "removed_person_spans": 0,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 24,
-          "removed_extra_person": 0
-        },
-        "fresh_external": {
-          "counts": {
-            "fio": 622,
-            "gold": 636,
-            "exact": 580,
-            "false": 273,
-            "invalid": 0
-          },
-          "paired": {
-            "new_false": 90,
-            "removed_false": 0,
-            "gained_complete": 217,
-            "lost_complete": 0,
-            "gained_target_complete": 217,
-            "lost_target_complete": 0,
-            "gained_exact": 199,
-            "lost_exact": 0,
-            "gained_target_exact": 199,
-            "lost_target_exact": 0
-          },
-          "added_person_spans": 361,
-          "removed_person_spans": 36,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 140,
-          "removed_extra_person": 0
-        }
-      }
-    },
-    "veto55": {
-      "restored_out_of_66": 0,
-      "cohorts": {
-        "scanpatch": {
-          "counts": {
-            "fio": 1107,
-            "gold": 1298,
-            "exact": 1015,
-            "false": 130,
-            "invalid": 0
-          },
-          "paired": {
-            "new_false": 0,
-            "removed_false": 0,
-            "gained_complete": 0,
-            "lost_complete": 0,
-            "gained_target_complete": 0,
-            "lost_target_complete": 0,
-            "gained_exact": 0,
-            "lost_exact": 0,
-            "gained_target_exact": 0,
-            "lost_target_exact": 0
-          },
-          "added_person_spans": 0,
-          "removed_person_spans": 0,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 0,
-          "removed_extra_person": 0
-        },
-        "diagnostic_66": {
-          "counts": {
-            "fio": 1217,
-            "gold": 1298,
-            "exact": 1217,
-            "false": 115,
-            "invalid": 0
-          },
-          "paired": {
-            "gained_complete": 0,
-            "lost_complete": 0,
-            "gained_target_complete": 0,
-            "lost_target_complete": 0,
-            "gained_exact": 0,
-            "lost_exact": 0,
-            "gained_target_exact": 0,
-            "lost_target_exact": 0,
-            "new_false": 0,
-            "removed_false": 0
-          },
-          "added_person_spans": 0,
-          "removed_person_spans": 0,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 0,
-          "removed_extra_person": 0
-        },
-        "fresh_synthetic": {
-          "counts": {
-            "fio": 1035,
-            "gold": 1298,
-            "exact": 1000,
-            "false": 3,
-            "invalid": 0
-          },
-          "paired": {
-            "gained_complete": 0,
-            "lost_complete": 0,
-            "gained_target_complete": 0,
-            "lost_target_complete": 0,
-            "gained_exact": 0,
-            "lost_exact": 0,
-            "gained_target_exact": 0,
-            "lost_target_exact": 0,
-            "new_false": 0,
-            "removed_false": 0
-          },
-          "added_person_spans": 0,
-          "removed_person_spans": 0,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 0,
-          "removed_extra_person": 0
-        },
-        "fresh_external": {
-          "counts": {
-            "fio": 405,
-            "gold": 636,
-            "exact": 381,
-            "false": 183,
-            "invalid": 0
-          },
-          "paired": {
-            "new_false": 0,
-            "removed_false": 0,
-            "gained_complete": 0,
-            "lost_complete": 0,
-            "gained_target_complete": 0,
-            "lost_target_complete": 0,
-            "gained_exact": 0,
-            "lost_exact": 0,
-            "gained_target_exact": 0,
-            "lost_target_exact": 0
-          },
-          "added_person_spans": 0,
-          "removed_person_spans": 0,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 0,
-          "removed_extra_person": 0
-        }
-      }
-    },
-    "recall": {
-      "restored_out_of_66": 23,
-      "cohorts": {
-        "scanpatch": {
-          "counts": {
-            "fio": 1107,
-            "gold": 1298,
-            "exact": 1015,
-            "false": 130,
-            "invalid": 0
-          },
-          "paired": {
-            "new_false": 0,
-            "removed_false": 0,
-            "gained_complete": 0,
-            "lost_complete": 0,
-            "gained_target_complete": 0,
-            "lost_target_complete": 0,
-            "gained_exact": 0,
-            "lost_exact": 0,
-            "gained_target_exact": 0,
-            "lost_target_exact": 0
-          },
-          "added_person_spans": 0,
-          "removed_person_spans": 0,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 0,
-          "removed_extra_person": 0
-        },
-        "diagnostic_66": {
-          "counts": {
-            "fio": 1240,
-            "gold": 1298,
-            "exact": 1240,
-            "false": 115,
-            "invalid": 0
-          },
-          "paired": {
-            "gained_complete": 23,
-            "lost_complete": 0,
-            "gained_target_complete": 23,
-            "lost_target_complete": 0,
-            "gained_exact": 23,
-            "lost_exact": 0,
-            "gained_target_exact": 23,
-            "lost_target_exact": 0,
-            "new_false": 0,
-            "removed_false": 0
-          },
-          "added_person_spans": 23,
-          "removed_person_spans": 0,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 0,
-          "removed_extra_person": 0
-        },
-        "fresh_synthetic": {
-          "counts": {
-            "fio": 1140,
-            "gold": 1298,
-            "exact": 1105,
-            "false": 3,
-            "invalid": 0
-          },
-          "paired": {
-            "gained_complete": 105,
-            "lost_complete": 0,
-            "gained_target_complete": 105,
-            "lost_target_complete": 0,
-            "gained_exact": 105,
-            "lost_exact": 0,
-            "gained_target_exact": 105,
-            "lost_target_exact": 0,
-            "new_false": 0,
-            "removed_false": 0
-          },
-          "added_person_spans": 105,
-          "removed_person_spans": 0,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 0,
-          "removed_extra_person": 0
-        },
-        "fresh_external": {
-          "counts": {
-            "fio": 424,
-            "gold": 636,
-            "exact": 400,
-            "false": 183,
-            "invalid": 0
-          },
-          "paired": {
-            "new_false": 0,
-            "removed_false": 0,
-            "gained_complete": 19,
-            "lost_complete": 0,
-            "gained_target_complete": 19,
-            "lost_target_complete": 0,
-            "gained_exact": 19,
-            "lost_exact": 0,
-            "gained_target_exact": 19,
-            "lost_target_exact": 0
-          },
-          "added_person_spans": 19,
-          "removed_person_spans": 2,
-          "added_other_spans": 0,
-          "removed_other_spans": 0,
-          "new_extra_person": 0,
-          "removed_extra_person": 0
-        }
-      }
-    }
-  },
-  "p99_at_1000_records_per_second_ms": null
+  }
 }

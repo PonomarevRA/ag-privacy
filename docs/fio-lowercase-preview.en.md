@@ -1,15 +1,15 @@
-# Lowercase full-name masking preview
+# Lowercase full-name masking · preview 2
 
 [Русский](fio-lowercase-preview.ru.md) · [English](fio-lowercase-preview.en.md)
 
-`person-fio-lowercase-preview.bin` is an experimental checkpoint for the .NET CLI in `stream-log --log-analysis mixed` mode. The main model chooses span boundaries. A second learned decision can restore a rejected three-token lowercase Cyrillic candidate. Training uses synthetic name and technical-phrase pairs with the same surrounding text. Morphological dictionaries were used offline.
+`person-fio-lowercase-preview.bin` is an experimental profile for the .NET CLI in `stream-log --log-analysis mixed` mode. An extra learned decision can restore a rejected three-token lowercase Cyrillic span. The first fine-tuning pass started from the MLflow 59 checkpoint. Training used 1,104 same-context pairs and 256 additional quote-context pairs. Morphological dictionaries were used to prepare training data.
 
 ## Run the synthetic example
 
-From the project directory with .NET SDK 10.0.102 and Python 3.
+Run from the repository root using .NET SDK 10.0.102 and Python 3.
 
 ```sh
-git checkout fi-fio-lowercase-v0.1.0-preview.1
+git checkout fi-fio-lowercase-v0.1.0-preview.2
 work_dir=$(mktemp -d)
 python3 - "$work_dir/demo.key" <<'PY'
 import os
@@ -31,18 +31,19 @@ Substitutions depend on the key. [Synthetic input](../examples/generated/fio_low
 
 ## Evaluation
 
-| Test set | Complete full-name masks, before → after | Rows falsely masked as `PERSON`, after |
-|---|---:|---:|
-| Scanpatch regression | 1,107 → 1,107 of 1,298 (85.29%) | 130 of 900 (14.44%) |
-| Fresh authored lowercase synthetic test | 1,035 → 1,140 of 1,298 (87.83%) | 3 of 1,298 (0.23%) |
-| Fresh Powpowpow23 lowercase test | 405 → 424 of 636 (66.67%) | 183 of 1,298 (14.10%) |
+| Test set | Complete masks, before → after | False rows, after | New false rows |
+|---|---:|---:|---:|
+| Historical synthetic | 568 → 582 of 640 | 470 of 2,560 | 0 |
+| Fresh external subset | 267 → 268 of 320 | 55 of 400 | 0 |
+| Fresh synthetic | 664 → 679 of 768 | 71 of 768 | 0 |
+| Scanpatch | 1,107 → 1,107 of 1,298 | 130 of 900 | 0 |
 
-The checkpoint recovered 23 of 66 diagnosed misses. The measured suites recorded zero newly affected `PERSON` rows relative to the preceding filter. Existing false masks remain. Complete recall requires coverage of every non-whitespace character of the annotated name. False-mask denominators count rows without annotated names. The measurements cover full names on the specified cohorts.
+The model removed all 12 targeted false masks. The external subset gained one complete mask overall. On Scanpatch, one additional `PERSON` span fell outside the annotation in a record that already contained annotated names. False-row counts apply to rows without an annotated name. Complete coverage requires masking every non-whitespace character of the annotated name.
 
-- Scanpatch, a frozen regression subset of `data/train-00000-of-00001.parquet`. [Dataset card](https://huggingface.co/datasets/scanpatch/pii-ner-corpus-synthetic-controlled) · [Pinned file](https://huggingface.co/datasets/scanpatch/pii-ner-corpus-synthetic-controlled/blob/6af0587dde068d90d8a1080285159c374b46a09b/data/train-00000-of-00001.parquet)
-- Powpowpow23, a selected subset of `data/validation.parquet`. In 415 of 636 positive rows, evaluation lowercased the annotated name span and preserved the surrounding text. [Dataset card](https://huggingface.co/datasets/Powpowpow23/ru-pii-ner-data) · [Pinned file](https://huggingface.co/datasets/Powpowpow23/ru-pii-ner-data/blob/55acbec07fb04a18455111a34337cb515a7f821e/data/validation.parquet)
-- The authored synthetic test uses held-out templates, surname stems and patronymics. [Aggregate metrics and manifest from experiment 56](fio-lowercase-preview-metrics.json). The authored folds are available in the private distribution.
+The fresh external subset uses unseen groups from the same publisher. For 206 of 320 positive rows, only the annotated full-name interval was lowercased. The synthetic test uses separate templates, surname stems, and negative word forms. [Powpowpow23](https://huggingface.co/datasets/Powpowpow23/ru-pii-ner-data/blob/55acbec07fb04a18455111a34337cb515a7f821e/data/train.parquet) · [Scanpatch](https://huggingface.co/datasets/scanpatch/pii-ner-corpus-synthetic-controlled/blob/6af0587dde068d90d8a1080285159c374b46a09b/data/train-00000-of-00001.parquet) · [MLflow 60 aggregate results](fio-lowercase-preview-metrics.json)
 
-Use the preview for shadow evaluation. External complete recall was 66.67%. p99 at 1,000 rows/s remains unmeasured for this checkpoint.
+Select this profile explicitly for shadow evaluation. p99 at 1,000 records/s remains unmeasured for these weights.
 
-Model SHA-256 `6cfa72f1bf353e00ca1e934deb44d68e9d7890966377a6fc9c755626a129b5d8`.
+The two release builds matched the benchmark CLI output and replacement journal byte-for-byte across 8,324 records.
+
+Model SHA-256 `ecb1a5f65478a0ed5b49e31fb7b456848a47e4282a561b91a264f8dd68cd7b97`.
