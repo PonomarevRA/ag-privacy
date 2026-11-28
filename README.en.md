@@ -1,6 +1,6 @@
 # ag-privacy
 
-[Русский](README.ru.md) · [English](README.en.md) · [FI/FIO recall preview](docs/recall337-preview.en.md) · [FI/FIO model v1.0.0](docs/fi-fio-model-v1.en.md) · [Lowercase FIO preview](docs/fio-lowercase-preview.en.md)
+[Русский](README.ru.md) · [English](README.en.md) · [FI/FIO recall preview](docs/recall337-preview.en.md) · [FI/FIO model v1.0.0](docs/fi-fio-model-v1.en.md) · [Lowercase FIO preview](docs/fio-lowercase-preview.en.md) · [Default FI/FIO model v2.0.0](docs/fi-fio-model-v2.en.md)
 
 A local .NET 10 library for masking JSON, log messages, CSV, TSV and XML. It provides a streaming CLI, a local UI, ONNX Runtime integration and a browser person detector using WebNN. Surname lists are external training inputs. Inference uses model weights, format rules and context.
 
@@ -67,7 +67,6 @@ The following Linux/macOS example uses Python 3 to create a private key file. Th
 python3 -c 'import os,secrets; f=os.open(".demo.key",os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600); os.write(f,secrets.token_bytes(32)); os.close(f)'
 dotnet run --project src/AgPrivacy.Cli -c Release -- stream-log \
   policies/default.json .demo.key demo-scope demo-journal.ndjson \
-  models/person-default.bin --person-prose-model models/person-prose.bin \
   < examples/Onnx/input.ndjson > masked.ndjson
 ```
 

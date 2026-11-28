@@ -1,6 +1,6 @@
 # ag-privacy
 
-[Русский](README.ru.md) · [English](README.en.md) · [Экспериментальная модель ФИ и ФИО](docs/recall337-preview.ru.md) · [Модель ФИ и ФИО v1.0.0](docs/fi-fio-model-v1.ru.md) · [ФИО в нижнем регистре · preview](docs/fio-lowercase-preview.ru.md)
+[Русский](README.ru.md) · [English](README.en.md) · [Экспериментальная модель ФИ и ФИО](docs/recall337-preview.ru.md) · [Модель ФИ и ФИО v1.0.0](docs/fi-fio-model-v1.ru.md) · [ФИО в нижнем регистре · preview](docs/fio-lowercase-preview.ru.md) · [Основная модель ФИ и ФИО v2.0.0](docs/fi-fio-model-v2.ru.md)
 
 Локальная библиотека .NET 10 для маскирования чувствительных данных перед просмотром логов, обработкой файлов и передачей результата в другие системы. Обрабатывает JSON, сообщения внутри JSON, CSV, TSV и XML. Работает через .NET API, потоковый CLI и локальный UI.
 
@@ -93,7 +93,6 @@ Console.WriteLine(result.Data!.ToJsonString());
 python3 -c 'import os,secrets; f=os.open(".demo.key",os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600); os.write(f,secrets.token_bytes(32)); os.close(f)'
 dotnet run --project src/AgPrivacy.Cli -c Release -- stream-log \
   policies/default.json .demo.key demo-scope demo-journal.ndjson \
-  models/person-default.bin --person-prose-model models/person-prose.bin \
   < examples/generated/logs_before.ndjson > demo-masked.ndjson
 ```
 

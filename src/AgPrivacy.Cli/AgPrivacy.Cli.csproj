@@ -1,1 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><IsAotCompatible>true</IsAotCompatible><OptimizationPreference>Size</OptimizationPreference></PropertyGroup><ItemGroup><ProjectReference Include="../AgPrivacy.Core/AgPrivacy.Core.csproj"/></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAotCompatible>true</IsAotCompatible>
+    <OptimizationPreference>Size</OptimizationPreference>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../AgPrivacy.Core/AgPrivacy.Core.csproj" />
+    <EmbeddedResource Include="../../models/person-fi-fio-v2.bin" LogicalName="AgPrivacy.Cli.DefaultStructuredModel" />
+    <EmbeddedResource Include="../../models/person-prose.bin" LogicalName="AgPrivacy.Cli.DefaultProseModel" />
+  </ItemGroup>
+</Project>

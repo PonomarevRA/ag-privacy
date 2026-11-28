@@ -151,7 +151,7 @@ static async Task<int> StreamLogAsync(string[] args)
         var token = tokenPath is null ? null : TokenContextShadow.Load(ReadFile(tokenPath, TokenContextShadow.ModelBytes));
         var prose = prosePath is null ? null : MicroPersonModel.Load(ReadFile(prosePath, MicroPersonModel.MaximumFileBytes));
         StreamingPrivacyMasker pipe;
-        if (analysis is null)
+        if (analysis is null && (model is not null || prose is not null))
             pipe = new StreamingPrivacyMasker(policy, aliases, model, shadow, numeric, token, prose);
         else
         {
@@ -162,7 +162,13 @@ static async Task<int> StreamLogAsync(string[] args)
                 _ => LogAnalysisMode.Mixed
             };
             var proseDetector = prose ?? model;
-            var structuredDetector = structuredPath is null ? null : PilotSpanSelection.Load(ReadFile(structuredPath, PilotSpanSelection.MaximumFileBytes));
+            if (proseDetector is null && mode == LogAnalysisMode.Mixed && structuredPath is null)
+                proseDetector = MicroPersonModel.Load(ReadBundledModel("AgPrivacy.Cli.DefaultProseModel", MicroPersonModel.MaximumFileBytes));
+            var structuredDetector = structuredPath is not null
+                ? PilotSpanSelection.Load(ReadFile(structuredPath, PilotSpanSelection.MaximumFileBytes))
+                : mode == LogAnalysisMode.Text
+                    ? null
+                    : PilotSpanSelection.Load(ReadBundledModel("AgPrivacy.Cli.DefaultStructuredModel", PilotSpanSelection.MaximumFileBytes));
             pipe = new StreamingPrivacyMasker(policy, aliases, null, shadow, numeric, token, proseDetector, mode, structuredDetector);
         }
         await using var journalFile = OpenStreamJournal(args[4]);
@@ -177,6 +183,18 @@ static async Task<int> StreamLogAsync(string[] args)
         Console.Error.WriteLine("privacy-stream-blocked");
         return 2;
     }
+}
+
+/// <summary>Read a bounded model bundled in the CLI so defaults work from any directory.</summary>
+static byte[] ReadBundledModel(string name, int maximumBytes)
+{
+    using var stream = typeof(Program).Assembly.GetManifestResourceStream(name)
+        ?? throw new InvalidDataException("bundled-model-missing");
+    if (stream.Length <= 0 || stream.Length > maximumBytes)
+        throw new InvalidDataException("bundled-model-size");
+    byte[] bytes = new byte[(int)stream.Length];
+    stream.ReadExactly(bytes);
+    return bytes;
 }
 
 /// <summary>Accept each optional model flag once, with an optional positional person detector before the flags.</summary>

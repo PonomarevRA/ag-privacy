@@ -1,0 +1,4 @@
+{"trace.id": "mock-lowercase", "message": "В строке согласования фигурирует югбцекёпърип щсфпшд евоэбхвж. Сверка завершена.", "ticker": "MOCK"}
+{"trace.id": "mock-lowercase", "message": "В строке согласования фигурирует технический модуль обработки. Сверка завершена.", "ticker": "MOCK"}
+{"trace.id": "mock-json", "message": "{\"fullName\":\"ыытлытувйли пййч мвсуоочпз\",\"status\":\"accepted\",\"ticker\":\"MOCK\"}"}
+{"trace.id": "mock-json", "message": "{\"status\":\"технический модуль обработки\",\"ticker\":\"MOCK\"}"}

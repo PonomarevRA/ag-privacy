@@ -1,6 +1,6 @@
 # ag-privacy
 
-[Русский](README.ru.md) · [English](README.en.md) · [Экспериментальная модель ФИ и ФИО](docs/recall337-preview.ru.md) · [Модель ФИ и ФИО v1.0.0](docs/fi-fio-model-v1.ru.md) · [ФИО в нижнем регистре · preview](docs/fio-lowercase-preview.ru.md)
+[Русский](README.ru.md) · [English](README.en.md) · [Экспериментальная модель ФИ и ФИО](docs/recall337-preview.ru.md) · [Модель ФИ и ФИО v1.0.0](docs/fi-fio-model-v1.ru.md) · [ФИО в нижнем регистре · preview](docs/fio-lowercase-preview.ru.md) · [Основная модель ФИ и ФИО v2.0.0](docs/fi-fio-model-v2.ru.md)
 
 Локальная библиотека .NET 10 для маскирования JSON, сообщений логов, CSV, TSV и XML. Доступны потоковый CLI, локальный UI, ONNX Runtime и браузерный детектор ФИО через WebNN. Словари фамилий используются как внешние данные обучения. При обработке работают веса моделей, правила формата и контекст.
 
@@ -67,7 +67,6 @@ Console.WriteLine(result.Data!.ToJsonString());
 python3 -c 'import os,secrets; f=os.open(".demo.key",os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600); os.write(f,secrets.token_bytes(32)); os.close(f)'
 dotnet run --project src/AgPrivacy.Cli -c Release -- stream-log \
   policies/default.json .demo.key demo-scope demo-journal.ndjson \
-  models/person-default.bin --person-prose-model models/person-prose.bin \
   < examples/Onnx/input.ndjson > masked.ndjson
 ```
 
